@@ -1,0 +1,8 @@
+NATIVE_ENABLED = true
+BYTE_ENABLED = true
+
+MENHIR_ENABLED = true
+
+OCAMLOPTFLAGS += -inline 100
+
+.SUBDIRS: src

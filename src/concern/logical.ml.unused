@@ -1,0 +1,78 @@
+
+open Core.Std
+
+type 'a logic_t =
+  | Impl of 'a logic_t * 'a logic_t
+  | And of 'a logic_t * 'a logic_t
+  | Or of 'a logic_t * 'a logic_t
+  | Not of 'a logic_t
+  | Atom of 'a
+  | Bool of bool
+
+type 'a 'b delogic_t =
+  | DImpl of 'a * 'a
+  | DAnd of 'a * 'a
+  | DOr of 'a * 'a
+  | DNot of 'a
+  | DAtom of 'b
+  | DBool of bool
+
+let decompose e f =
+  match e with
+  | Impl (d1, d2) -> DImpl (f d1, f d2)
+  | And (d1, d2) -> DAnd (f d1, f d2)
+  | Or (d1, d2) -> DOr (f d1, f d2)
+  | Not d -> DNot (f d)
+  | Atom at -> DAtom at
+  | Bool bl -> DBool bl
+
+let reassemble = function
+  | DImpl (d1, d2) -> Impl (d1, d2)
+  | DAnd (d1, d2) -> And (d1, d2)
+  | DOr (d1, d2) -> Or (d1, d2)
+  | DNot d -> Not d
+  | DAtom at -> Atom at
+
+let is_true = function
+  | DBool bl -> bl
+  | _ -> false
+
+let is_false = function
+  | DBool bl -> !bl
+  | _ -> false
+
+module type S = sig
+  type t
+  type atom_t
+
+  val to_logic : t -> logic_t
+
+  module Comp : Map.Key with type t = atom_t
+end
+
+module Make (M : S) = struct
+  module AtomMap = Map.Make(S.Comp)
+  module Decompose = Decomposable.Make(struct
+    type 'a t = 'a S.t delogic_t
+    let decompose = decompose
+    let reassemble = reassemble
+  end)
+
+  type env_t = { truthy: AtomMap.t; falsy: AtomMap.t; }
+
+  let compress e env =
+    let loop = function
+    | DImpl (d1, d2) when is_true d1 || is_false d2 -> Bool true
+    | DImpl (d1, d2) when is_false d1 && is_true d2 -> Bool false
+    | DAnd (d1, d2) when is_true d1 && is_true d2 -> Bool true
+    | DAnd (d1, d2) when is_false d1 || is_false d2 -> Bool false
+    | DOr (d1, d2) when is_true d1 || is_true d2 -> Bool true
+    | DOr (d1, d2) when is_false d1 && is_false d2 -> Bool false
+    | DNot d when is_true d -> Bool false
+    | DNot d when is_false d -> Bool true
+    | DAtom at ->
+      match Atom.find env at with
+        Some b -> Bool b
+      | None -> Atom at
+    in Decompose.dmap e loop
+end

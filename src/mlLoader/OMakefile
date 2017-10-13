@@ -1,0 +1,27 @@
+OCAMLINCLUDES = ../concern ../data
+OCAML_LIBS = ../concern/concern ../data/data
+
+MENHIR_ENABLED = true
+MENHIR_AVAILABLE = true
+
+USE_OCAMLFIND = true
+OCAMLPACKS[] =
+  core
+  ppx_deriving
+  ppx_deriving.create
+  ppx_deriving.eq
+  ppx_deriving.ord
+  ppx_deriving.show
+  ppx_sexp_conv
+  ppx_hash
+  ppx_variants_conv
+  ppx_fields_conv
+  ppx_compare
+  ppx_driver
+OCAMLFLAGS = -warn-error A -thread
+
+OCamlLibrary(mlLoader, alphaConv letNormal simplify kNormal elimAssert bindValueReduction betaReduction convMain closureConv sugarProgram desugar mlLoader)
+
+.PHONY: clean
+clean:
+  rm -f *.cmo *.cmx *.cmi *.cmxa *.a *.omc *.o
