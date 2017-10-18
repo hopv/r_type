@@ -111,6 +111,11 @@ module Clap = struct
       print_help () ;
       exit 0
     )
+    | [ file ] -> ml_file := Some file ; Res.Ok ()
+    | file :: "--" :: tail ->
+      ml_file := Some file ;
+      clause_solver_opts := tail ;
+      Res.Ok ()
     | arg :: value :: tail -> (
       match List.find args ~f:(
         fun (opt, _, _, _, _) -> opt = arg
@@ -135,7 +140,6 @@ module Clap = struct
           | [] -> Res.Ok ()
         )
     )
-    | [ file ] -> ml_file := Some file ; Res.Ok ()
     | [] -> Res.Ok ()
     in
     let res =

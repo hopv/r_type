@@ -1,6 +1,25 @@
 open Core
 open Lib
 
+module Map = Identity.Map
+module Typ = Type.RefType
+
+
+let print_type_env type_env model =
+  Format.printf "Program is safe with types@." ;
+  let types = Cond.UnknownSubst.Map.empty in
+  Type.Env.assign_unknown type_env types |> Type.Env.to_string
+  |> Format.printf "%s" ;
+  if model <> [] then (
+    Format.printf "with@.@." ;
+    List.iter model ~f:(
+      Format.printf "@[<v>%a@]@." ParseBase.fmt_def
+    )
+  ) ;
+  ()
+
+
+
 let work filename =
   Loader.main Loader.Config.(
     { filename ; qualfilename = "" ;
@@ -10,7 +29,7 @@ let work filename =
     }
   )
 
-  |> Res.and_then (fun { Loader.horn_clauses } ->
+  |> Res.and_then (fun { Loader.horn_clauses ; Loader.type_env } ->
 
     if ! Conf.run_solver |> not then
       (fun () ->
@@ -18,12 +37,18 @@ let work filename =
           Format.std_formatter false filename horn_clauses
       ) |> sanitize "during horn clause generation"
     else
-      let res =
-        Solver.solve filename horn_clauses
-        |> Res.chain_err "during horn clause solving"
-      in
-      let kill_res = Solver.kill () in
-      if Res.is_ok res then kill_res else res
+      Solver.solve filename horn_clauses
+      |> Res.chain_err "during horn clause solving"
+      |> Res.and_then (function
+        | Some model ->
+          print_type_env type_env model ;
+          Res.Ok ()
+        | None ->
+          Format.printf
+            "This program is not typeable with refinement types@." ;
+          Format.printf "It might be unsafe.@." ;
+          Res.Ok ()
+      )
 
   )
 
@@ -31,7 +56,5 @@ let work filename =
 
 let _ =
   let ml_file = Conf.init () in
-  work ml_file |> Res.unwrap ~finalize:(
-    fun () -> Solver.kill () |> Res.unwrap "while killing solver"
-  ) (Format.asprintf "on file %s" ml_file) ;
+  work ml_file |> Res.unwrap (Format.asprintf "on file %s" ml_file) ;
   exit 0

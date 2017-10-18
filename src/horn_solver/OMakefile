@@ -1,12 +1,15 @@
 OCAMLINCLUDES = ../common ../data
 OCAML_LIBS = ../common/common ../data/data
 
+MENHIR_ENABLED = true
+MENHIR_AVAILABLE = true
+
 USE_OCAMLFIND = true
 OCAMLFLAGS = -warn-error A -thread
 OCAMLPACKS[] =
   core
 
-OCamlLibrary(horn_solver, solver)
+OCamlLibrary(horn_solver, smtParse smtLex parseBase solver)
 
 .PHONY: clean
 clean:

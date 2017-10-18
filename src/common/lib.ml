@@ -1,8 +1,6 @@
 (** Helper types and functions. *)
 
 
-
-
 (** Result type to make caml slightly less unsafe. *)
 module Res = struct
 
@@ -14,7 +12,7 @@ module Res = struct
   (** Map over `Ok`. *)
   let map f = function
   | Ok res -> Ok (f res)
-  | err -> err
+  | Err e -> Err e
 
   (** Map over `err`. *)
   let map_err f = function
@@ -43,7 +41,7 @@ module Res = struct
   | Err err -> Err err
 
   (** Return the value in `Ok` or prints an error and exits. *)
-  let unwrap ?(finalize = fun () -> ()) blah = function
+  let unwrap blah = function
   | Ok res -> res
   | Err e ->
     Format.fprintf Format.err_formatter "Error %s:" blah ;

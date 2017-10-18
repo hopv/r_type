@@ -1145,7 +1145,7 @@ module ToSmt2 = struct
   | Value (Objt.BoolObj b) -> Format.fprintf fmt "%b" b
   | Value (Objt.Array _) -> failwith "arrays are not supported"
   | UApp (un, terms) -> (
-    Format.fprintf fmt "(|%s|" un.UnknownPredicate.id ;
+    Format.fprintf fmt "(|%s|" (Identity.Short.show un.UnknownPredicate.id) ;
     List.iter terms (Format.fprintf fmt " %a" term_fmt) ;
     Format.fprintf fmt ")"
   )
@@ -1248,7 +1248,7 @@ module ToSmt2 = struct
   | UApp (un, terms) -> (
     let preds = if List.mem ~equal:(
       fun p p' -> p.UnknownPredicate.id = p'.UnknownPredicate.id
-    ) preds un then preds else un ::preds in
+    ) preds un then preds else un :: preds in
     List.fold_left terms ~init:(vars, preds) ~f:(
       fun (vars, preds) (term: t) ->
         collect ~debug:debug ~typ:Int vars preds term
@@ -1307,7 +1307,8 @@ module ToSmt2 = struct
 
     List.iter preds (
       fun pred ->
-        Format.fprintf fmt "(declare-fun |%s|@.  (" pred.UnknownPredicate.id ;
+        Format.fprintf fmt "(declare-fun |%s|@.  ("
+          (Identity.Short.show pred.UnknownPredicate.id) ;
         List.iter pred.UnknownPredicate.vars (
           fun _ -> Format.fprintf fmt " Int"
         ) ;
