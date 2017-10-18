@@ -1292,11 +1292,11 @@ module ToSmt2 = struct
     loop [] term
 
 
-  let print_clauses verbose ml_file clauses =
+  let clauses_to_smt2 fmt verbose ml_file clauses =
 
-    Format.printf "(set-logic HORN)@.@." ;
+    Format.fprintf fmt "(set-logic HORN)@.@." ;
 
-    (* Format.printf "collecting predicates...@." ; *)
+    (* Format.fprintf fmt "collecting predicates...@." ; *)
 
     let clauses = List.map clauses Boolnize.main in
 
@@ -1307,12 +1307,14 @@ module ToSmt2 = struct
 
     List.iter preds (
       fun pred ->
-        Format.printf "(declare-fun |%s|@.  (" pred.UnknownPredicate.id ;
-        List.iter pred.UnknownPredicate.vars (fun _ -> Format.printf " Int") ;
-        Format.printf " ) Bool@.)@.@."
+        Format.fprintf fmt "(declare-fun |%s|@.  (" pred.UnknownPredicate.id ;
+        List.iter pred.UnknownPredicate.vars (
+          fun _ -> Format.fprintf fmt " Int"
+        ) ;
+        Format.fprintf fmt " ) Bool@.)@.@."
     ) ;
 
-    (* Format.printf "collecting variables...@." ; *)
+    (* Format.fprintf fmt "collecting variables...@." ; *)
 
     List.iter clauses (
       fun clause ->
@@ -1345,53 +1347,54 @@ module ToSmt2 = struct
           List.iter rhs (
             fun rhs ->
               let positive = rhs <> None in
-              Format.printf "(assert@.  (" ;
+              Format.fprintf fmt "(assert@.  (" ;
               ( if positive then
-                  Format.printf "forall ("
+                  Format.fprintf fmt "forall ("
                 else
-                  Format.printf "not (exists ("
+                  Format.fprintf fmt "not (exists ("
               ) ;
               ( match vars with
-                | [] -> Format.printf " (unused Int)"
+                | [] -> Format.fprintf fmt " (unused Int)"
                 | _ -> List.iter vars (
                   fun (v, t) ->
-                    try Format.printf " (|%s| %s)" v (
+                    try Format.fprintf fmt " (|%s| %s)" v (
                       str_of_typ @@ typ_of_simpleType t
                     )
                     with err ->
-                      Format.printf "Error while getting the type of %s:@." v ;
+                      Format.fprintf
+                        fmt "Error while getting the type of %s:@." v ;
                       raise err
                 )
               ) ;
-              Format.printf " )@.    " ;
+              Format.fprintf fmt " )@.    " ;
               ( if positive then
-                  Format.printf "(=>@.      "
+                  Format.fprintf fmt "(=>@.      "
               ) ;
               ( if lhs = [] then (
-                  Format.printf "true@."
+                  Format.fprintf fmt "true@."
                 ) else (
-                  Format.printf "( and" ;
-                  List.iter lhs (Format.printf " %a" term_fmt) ;
-                  Format.printf " )@."
+                  Format.fprintf fmt "( and" ;
+                  List.iter lhs (Format.fprintf fmt " %a" term_fmt) ;
+                  Format.fprintf fmt " )@."
                 )
               ) ;
               ( match rhs with
                 | Some rhs ->
                   assert positive ;
-                  Format.printf "      %a@.    )@.  )@.)@." term_fmt rhs
+                  Format.fprintf fmt "      %a@.    )@.  )@.)@." term_fmt rhs
                 | None ->
-                  Format.printf "    )@.  )@.)@."
+                  Format.fprintf fmt "    )@.  )@.)@."
               )
           )
         )
-        (* Format.printf " )@.  %a@.)@.@." term_fmt rhs *)
+        (* Format.fprintf fmt " )@.  %a@.)@.@." term_fmt rhs *)
     ) ;
 
-    Format.printf "(check-sat)@.@." ;
+    Format.fprintf fmt "(check-sat)@.@." ;
 
-    Format.printf "(get-model)@.@." ;
+    Format.fprintf fmt "(get-model)@.@." ;
 
-    Format.printf "(exit)@.@."
+    Format.fprintf fmt "(exit)@.@."
 
 
 end

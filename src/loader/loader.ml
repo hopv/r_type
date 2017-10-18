@@ -1,6 +1,4 @@
-
 open Core
-(* include ParsingM *)
 
 module Config = struct
   type t = {
@@ -26,7 +24,7 @@ let switch_use_refinement_annotation b = Program.use_refinement_annotation := b
 let use_test_run = ref true
 let switch_use_test_run b = use_test_run := b
 
-let main (config : Config.t) : t =
+let main (config : Config.t) = (fun () ->
   config.Config.filename |>
   MlLoader.parse |> MlLoader.desugar |>
   (fun pr ->
@@ -53,6 +51,7 @@ let main (config : Config.t) : t =
       ~horn_clauses:clauses
       ()
   )
+) |> Lib.sanitize "during caml loading"
 
 let read_given_tyenv prfname tyfname =
   let program = prfname |> MlLoader.parse |> MlLoader.desugar in

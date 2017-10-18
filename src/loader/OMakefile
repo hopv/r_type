@@ -1,5 +1,5 @@
-OCAMLINCLUDES = ../concern ../data ../mlLoader
-OCAML_LIBS = ../concern/concern ../data/data ../mlLoader/mlLoader
+OCAMLINCLUDES = ../common ../concern ../data ../mlLoader
+OCAML_LIBS = ../common/common ../concern/concern ../data/data ../mlLoader/mlLoader
 
 MENHIR_ENABLED = true
 MENHIR_AVAILABLE = true

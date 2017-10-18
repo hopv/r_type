@@ -1,5 +1,5 @@
-OCAMLINCLUDES = concern data mlLoader loader
-OCAML_LIBS = concern/concern data/data mlLoader/mlLoader loader/loader
+OCAMLINCLUDES = common concern data mlLoader loader horn_solver
+OCAML_LIBS = common/common concern/concern data/data mlLoader/mlLoader loader/loader  horn_solver/horn_solver
 
 NATIVE_ENABLED = true
 BYTE_ENABLED = true
@@ -29,7 +29,7 @@ OCamlProgram(fp_mc, fp_mc)
 
 .DEFAULT: fp_mc$(EXE)
 
-.SUBDIRS: concern data mlLoader loader
+.SUBDIRS: common concern data mlLoader loader horn_solver
 
 .PHONY: clean
 clean:
