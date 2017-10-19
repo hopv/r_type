@@ -16,8 +16,8 @@ let clause_solver_opts = ref []
 (** Caml file we're analyzing. *)
 let ml_file = ref None
 
-
-
+(** Verbose flag. *)
+let verb = ref false
 
 
 (** CLAP stuff. *)
@@ -54,6 +54,10 @@ module Clap = struct
     arg, sprintf "expected boolean argument `%s`" bool_format
   )
 
+  let uargs = [
+    ( "-v", ("verbose output", fun () -> verb := true) )
+  ]
+
   let args = [
     ( "--effect_analysis",
       "(de)activates effect analysis",
@@ -88,11 +92,17 @@ module Clap = struct
         horn clause solver@.\
       Options:@.\
     " ;
+    List.iter uargs ~f:(
+      fun (opt, (desc, _)) ->
+        Format.printf
+          "  @[<v>%-20s %-20s %s@]@." (Format.sprintf " %s" opt) "" desc
+    ) ;
     List.iter args ~f:(
       fun (opt, desc, fmt, default, _) ->
         Format.printf
           "  @[<v>%-20s %-20s %s@   default '%s'@]@." opt fmt desc default
-    )
+    ) ;
+    ()
 
 
   let try_clap = function
@@ -116,6 +126,13 @@ module Clap = struct
       ml_file := Some file ;
       clause_solver_opts := tail ;
       Res.Ok ()
+    | opt :: tail when (
+      List.find uargs ~f:( fun (o, _) -> o = opt ) <> None
+    ) -> (
+      match List.find uargs ~f:( fun (o, _) -> o = opt ) with
+      | Some (_, (_, action)) -> action () ; loop tail
+      | None -> failwith "unreachable"
+    )
     | arg :: value :: tail -> (
       match List.find args ~f:(
         fun (opt, _, _, _, _) -> opt = arg

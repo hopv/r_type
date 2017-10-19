@@ -7,8 +7,10 @@ type args = (string * string) list
 type body =
 (** A existential quantifier. *)
 | Qtf of args * body
-(** Operator or predicate application. *)
+(** Operator application. *)
 | App of string * body list
+(** Predicate application. *)
+| PApp of string * body list
 (** A let-binding. *)
 | Let of (string * body) list * body
 (** Variable or constant. *)
@@ -56,6 +58,14 @@ let rec fmt_body fmt: body -> unit = function
     ) ;
     false
 ) |> ignore
+| PApp (pred, args) ->
+  Format.fprintf fmt "@[<v>(%s" pred ;
+  Core.List.iter args ~f:(
+    fun arg ->
+      let (opn, cls) = if needs_parens arg then ("(", ")") else ("", "") in
+      Format.fprintf fmt "@   @[<v>%s%a%s@]" opn fmt_body arg cls
+  ) ;
+  Format.fprintf fmt "@ )@]"
 | Let ((id, expr) :: [], body) ->
   Format.fprintf fmt "let %s =@   @[<v>%a@]@ in@ %a" id fmt_body expr fmt_body body
 | Let (bindings, body) ->

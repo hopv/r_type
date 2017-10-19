@@ -6,12 +6,12 @@ module Typ = Type.RefType
 
 
 let print_type_env type_env model =
-  Format.printf "Program is safe with types@." ;
+  Format.printf "Program is safe with types@.@." ;
   let types = Cond.UnknownSubst.Map.empty in
   Type.Env.assign_unknown type_env types |> Type.Env.to_string
   |> Format.printf "%s" ;
   if model <> [] then (
-    Format.printf "with@.@." ;
+    Format.printf "where@.@." ;
     List.iter model ~f:(
       Format.printf "@[<v>%a@]@." ParseBase.fmt_def
     )
@@ -21,6 +21,7 @@ let print_type_env type_env model =
 
 
 let work filename =
+  if ! Conf.verb then Format.printf "loading file '%s'...@." filename ;
   Loader.main Loader.Config.(
     { filename ; qualfilename = "" ;
       reduce_vc = false ;
@@ -36,11 +37,13 @@ let work filename =
         Cond.ToSmt2.clauses_to_smt2
           Format.std_formatter false filename horn_clauses
       ) |> sanitize "during horn clause generation"
-    else
+    else (
+      if ! Conf.verb then Format.printf "running solver...@." ;
       Solver.solve filename horn_clauses
       |> Res.chain_err "during horn clause solving"
       |> Res.and_then (function
         | Some model ->
+          if ! Conf.verb then Format.printf "success, printing model...@.@." ;
           print_type_env type_env model ;
           Res.Ok ()
         | None ->
@@ -49,6 +52,7 @@ let work filename =
           Format.printf "It might be unsafe.@." ;
           Res.Ok ()
       )
+    )
 
   )
 

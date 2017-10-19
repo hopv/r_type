@@ -49,7 +49,7 @@ typ:
 
 body:
 | OPAREN ;
-    EXISTS ; OPAREN ; args = list(arg) ; body = body ;
+    EXISTS ; OPAREN ; args = list(arg) ; CPAREN ; body = body ;
   CPAREN { ParseBase.Qtf (args, body) }
 | OPAREN ; LET ; OPAREN ;
   bindings = list(binding) ; CPAREN ; body = body ;
@@ -58,6 +58,9 @@ CPAREN {
 }
 | OPAREN ; op = OP ; args = list(body) ; CPAREN {
   ParseBase.App(op, args)
+}
+| OPAREN ; id = IDENT ; args = list(body) ; CPAREN {
+  ParseBase.PApp(id, args)
 }
 | CBOOL { ParseBase.Leaf $1 }
 | CINT { ParseBase.Leaf $1 }

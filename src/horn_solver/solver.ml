@@ -97,15 +97,21 @@ let print_position outx lexbuf =
 
 (** Parses the output of the solver. *)
 let parse lexbuf =
-  try (SmtParse.top SmtLex.token lexbuf, lexbuf) |> Res.ok with
+  try
+    (SmtParse.top SmtLex.token lexbuf, lexbuf) |> Res.ok
+  with
   | SmtLex.SyntaxError msg -> Res.err [
     Format.asprintf "%a: %s" print_position lexbuf msg
   ]
-  | SmtParse.Error -> Format.printf "%s@." (Lexing.lexeme lexbuf) ; Res.err [
+  | SmtParse.Error -> Res.err [
     Format.asprintf
-      "%a: syntax error on character %c (%b)" print_position lexbuf
+      "%a: syntax error on character '%c' (%b)" print_position lexbuf
       (Lexing.lexeme_char lexbuf lexbuf.Lexing.lex_last_pos)
       lexbuf.Lexing.lex_eof_reached
+  ]
+  | e -> Res.err [
+    "unexpected error during parsing" ;
+    Format.asprintf "%s" (Printexc.to_string e)
   ]
 
 let start_parsing stdout =
@@ -117,12 +123,16 @@ let start_parsing stdout =
 closing it. *)
 let solve filename clauses =
   let res =
+    if ! Conf.verb then Format.printf "  spawning solver...@." ;
     spawn ()
     |> Res.and_then (fun stdin ->
       (fun () ->
+        if ! Conf.verb then Format.printf "  printing clauses...@." ;
         let res = Cond.ToSmt2.clauses_to_smt2 stdin false filename clauses in
         ( match ! solver_pid with
           | Some pid ->
+            if ! Conf.verb then
+              Format.printf "  waiting for solver to terminate...@." ;
             let _ = Unix.waitpid [] pid in
             solver_pid := None ;
             ()
@@ -134,21 +144,29 @@ let solve filename clauses =
       |> Res.map (fun () -> stdin)
     )
     |> Res.and_then (
-      fun stdin -> match ! stdout with
-      | Some stdout -> start_parsing stdout |> Res.and_then (
-        function
-        | (ParseBase.Sat, lex) -> Res.ok (true, lex)
-        | (ParseBase.Unsat, lex) -> Res.ok (false, lex)
-        | (res, _) -> Res.err [
-          ParseBase.desc_of res
-          |> Format.sprintf "expected sat or unsat, got %s"
-        ]
+      fun stdin -> (
+        if ! Conf.verb then Format.printf "  parsing result...@." ;
+        match ! stdout with
+        | Some stdout -> start_parsing stdout |> Res.and_then (
+          function
+          | (ParseBase.Sat, lex) ->
+            if ! Conf.verb then Format.printf "    sat@." ;
+            Res.ok (true, lex)
+          | (ParseBase.Unsat, lex) ->
+            if ! Conf.verb then Format.printf "    unsat@." ;
+            Res.ok (false, lex)
+          | (res, _) -> Res.err [
+            ParseBase.desc_of res
+            |> Format.sprintf "expected sat or unsat, got %s"
+          ]
+        )
+        | None -> Res.err ["cannot access solver's stdout"]
       )
-      | None -> Res.err ["cannot access solver's stdout"]
     )
     |> Res.chain_err "while retrieving sat result"
     |> Res.and_then(function
       | (true, lex) ->
+        if ! Conf.verb then Format.printf "  retrieving model...@." ;
         parse lex |> Res.map fst |> Res.and_then(
           function
           | ParseBase.Model model -> Some model |> Res.ok
@@ -161,6 +179,8 @@ let solve filename clauses =
       | (false, _) -> Res.ok None
     )
   in
+  if ! Conf.verb then Format.printf
+    "  cleaning up...@." ;
   let kill_res = kill () in
   if Res.is_ok kill_res || Res.is_err res then
     res

@@ -232,9 +232,12 @@ module Env = struct
     )
 
   let to_string (mp, conds) =
-    "\n" ^ List.fold (Map.to_alist mp) ~init:"" ~f:(fun str (key, data) ->
-      key ^ ": " ^ RefType.to_string data ^ "\n" ^ str) ^ "\n" ^
-      List.fold conds ~init:"" ~f:(fun str cond -> Cond.to_string cond ^ str)
+    List.fold (Map.to_alist mp) ~init:"" ~f:(
+      fun str (key, data) ->
+        key ^ ": " ^ RefType.to_string data ^ "\n\n" ^ str
+    ) ^ "\n\n" ^ List.fold conds ~init:"" ~f:(
+      fun str cond -> Cond.to_string cond ^ str
+    )
 end
 
 module Extended = struct
