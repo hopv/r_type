@@ -11,6 +11,7 @@ It supports a subset of caml including higher-order functions, nested recursive 
 Make sure you have [opam][opam] installed, ideally switched to the latest stable ocaml compiler (`4.05.0` at the time of writing). `r_type` requires the following opam libraries:
 
 - `omake` (build only)
+- `menhir`
 - `core`
 - `re2`
 - `ppx_deriving`
@@ -29,7 +30,7 @@ So, a complete setup to compile `r_type` looks like
 > opam switch 4.05.0
 > eval `opam config env`
   # Install relevant packages...
-> opam install omake core re2 ppx_deriving ppx_sexp_conv ppx_hash ppx_variants_conv ppx_fields_conv ppx_compare ppx_driver
+> opam install omake menhir core re2 ppx_deriving ppx_sexp_conv ppx_hash ppx_variants_conv ppx_fields_conv ppx_compare ppx_driver
 ```
 
 Then, simply run `omake` at the root of this repository. The binary will be located at `src/r_type.opt` (`src/r_type` is a soft link to it).
