@@ -21,19 +21,24 @@ Make sure you have [opam][opam] installed, ideally switched to the latest stable
 - `ppx_compare`
 - `ppx_driver`
 
-You can install them by running
+So, a complete setup to compile `r_type` looks like
 
 ```bash
+> opam update && opam upgrade
+  # Switch to 4.05.0...
+> opam switch 4.05.0
+> eval `opam config env`
+  # Install relevant packages...
 > opam install omake core re2 ppx_deriving ppx_sexp_conv ppx_hash ppx_variants_conv ppx_fields_conv ppx_compare ppx_driver
 ```
 
-Then, simply run `omake` at the root of this repository. The binary will be located at `src/r_type.opt`.
+Then, simply run `omake` at the root of this repository. The binary will be located at `src/r_type.opt` (`src/r_type` is a soft link to it).
 
 # Running
 
 ```
 Usage: r_type [options]* <caml_file> [-- <solver arguments>*]
-  the arguments passed after the '--' are passed to the underlying horn clause solver
+  the arguments after the '--' are passed to the underlying horn clause solver
 Options:
    -v                                       verbose output
   --effect_analysis    [on|true|off|false]  (de)activates effect analysis
