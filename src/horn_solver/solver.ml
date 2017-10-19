@@ -136,10 +136,11 @@ let solve filename clauses =
           | Some pid ->
             if ! Conf.verb then
               Format.printf "  waiting for solver to terminate...@." ;
-            let _ = Unix.waitpid [] pid in
+            let _ = Unix.waitpid [ Unix.WNOHANG ; Unix.WUNTRACED ] pid in
             solver_pid := None ;
             ()
-          | None -> ()
+          | None ->
+            failwith "unreachable, no solver pid registered"
         ) ;
         res
       )
