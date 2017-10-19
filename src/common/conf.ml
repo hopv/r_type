@@ -1,5 +1,6 @@
 (** Settings of the run. *)
 
+open Core
 
 (** Effect analysis flag. *)
 let effect_analysis = ref true
@@ -7,11 +8,11 @@ let effect_analysis = ref true
 (** Whether or not to run the solver. *)
 let run_solver = ref true
 
-(** Command running the solver. *)
-let clause_solver = ref "hoice"
-
-(** Options to pass to the solver. *)
-let clause_solver_opts = ref []
+(** Command and options running the solver. *)
+let clause_solver = ref [ "hoice" ]
+(** String version of `clause_solver`. *)
+let clause_solver_str () =
+  String.concat ~sep:" " ! clause_solver
 
 (** Caml file we're analyzing. *)
 let ml_file = ref None
@@ -54,11 +55,13 @@ module Clap = struct
     arg, sprintf "expected boolean argument `%s`" bool_format
   )
 
-  let uargs = [
+  (* Nullary arguments (flags). *)
+  let n_args = [
     ( "-v", ("verbose output", fun () -> verb := true) )
   ]
 
-  let args = [
+  (* Unary arguments (options). *)
+  let u_args = [
     ( "--effect_analysis",
       "(de)activates effect analysis",
       bool_format,
@@ -78,8 +81,21 @@ module Clap = struct
     ( "--solver",
       "command running the horn clause solver, e.g. `hoice` or `z3`",
       "<cmd>",
-      ! clause_solver,
-      fun arg -> clause_solver := arg ; Res.Ok ()
+      clause_solver_str (),
+      fun arg ->
+        clause_solver := (
+          let split = String.split_on_chars arg ~on:[ ' ' ; '\t' ; '\r' ] in
+          List.fold_left split ~init:[] ~f:(
+            fun acc s ->
+              let s = String.strip s in
+              if s <> "" then (
+                (* Format.printf "%s@." s ; *)
+                s :: acc
+              ) else acc
+          )
+          |> List.rev
+        ) ;
+        Res.ok ()
     ) ;
   ]
 
@@ -87,17 +103,15 @@ module Clap = struct
 
   let print_help () =
     Format.printf "\
-      Usage: r_type [options]* <caml_file> [-- <solver arguments>*]@.  \
-        the arguments after the '--' are passed to the underlying \
-        horn clause solver@.\
+      Usage: r_type [options]* <caml_file>@.\
       Options:@.\
     " ;
-    List.iter uargs ~f:(
+    List.iter n_args ~f:(
       fun (opt, (desc, _)) ->
         Format.printf
           "  @[<v>%-20s %-20s %s@]@." (Format.sprintf " %s" opt) "" desc
     ) ;
-    List.iter args ~f:(
+    List.iter u_args ~f:(
       fun (opt, desc, fmt, default, _) ->
         Format.printf
           "  @[<v>%-20s %-20s %s@   default '%s'@]@." opt fmt desc default
@@ -122,43 +136,31 @@ module Clap = struct
       exit 0
     )
     | [ file ] -> ml_file := Some file ; Res.Ok ()
-    | file :: "--" :: tail ->
-      ml_file := Some file ;
-      clause_solver_opts := tail ;
-      Res.Ok ()
     | opt :: tail when (
-      List.find uargs ~f:( fun (o, _) -> o = opt ) <> None
+      List.find n_args ~f:( fun (o, _) -> o = opt ) <> None
     ) -> (
-      match List.find uargs ~f:( fun (o, _) -> o = opt ) with
+      match List.find n_args ~f:( fun (o, _) -> o = opt ) with
       | Some (_, (_, action)) -> action () ; loop tail
       | None -> failwith "unreachable"
     )
     | arg :: value :: tail -> (
-      match List.find args ~f:(
+      match List.find u_args ~f:(
         fun (opt, _, _, _, _) -> opt = arg
       ) with
       | Some (opt, _, _, _, action) ->
-        let res = action value |> parse_res_chain (
-          sprintf "on option '%s'" arg
-        ) in
-        if is_okay res then loop tail else res
-      | None ->
-        if String.sub arg 0 1 = "-" then
-          Res.Err (arg, "unknown option")
-        else (
-          ml_file := Some arg ;
-          match tail with
-          | "--" :: opts -> clause_solver_opts := opts ; Res.Ok ()
-          | unexpected :: _ -> Res.Err (
-            unexpected,
-            sprintf
-              "expected optional '--' and solver options after file '%s'" arg
+        let res =
+          action value |> parse_res_chain (
+            sprintf "on option '%s'" arg
           )
-          | [] -> Res.Ok ()
-        )
+        in
+        if is_okay res then loop tail else res
+      | None -> Res.Err (arg, "unknown option")
     )
+    (* The next case is actually necessarily an error **for now**. The error
+    will be caught after, when checking that the file is not `None. *)
     | [] -> Res.Ok ()
     in
+
     let res =
       Array.sub Sys.argv ~pos:1 ~len:(Array.length Sys.argv - 1)
       |> Array.to_list |> loop

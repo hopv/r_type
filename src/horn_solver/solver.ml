@@ -58,12 +58,15 @@ let spawn () = (fun () ->
   in
   (* Spawn solver. *)
   let pid =
-    Unix.create_process
-      ! Conf.clause_solver
-      (! Conf.clause_solver :: ! Conf.clause_solver_opts |> Array.of_list)
-      solver_stdin_in
-      solver_stdout_out
-      solver_stderr_out
+    match ! Conf.clause_solver with
+    | (bin :: _) as cmd ->
+      Unix.create_process
+        bin
+        (cmd |> Array.of_list)
+        solver_stdin_in
+        solver_stdout_out
+        solver_stderr_out
+    | [] -> Failure "empty solver command" |> raise
   in
   (* Close useless pipes. *)
   Unix.close solver_stdin_in ;
@@ -140,7 +143,7 @@ let solve filename clauses =
         ) ;
         res
       )
-      |> sanitize "while printing clauses to solver's stdin"
+      |> sanitize "waiting for the solver to terminate"
       |> Res.map (fun () -> stdin)
     )
     |> Res.and_then (
