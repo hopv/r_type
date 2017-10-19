@@ -87,7 +87,7 @@ module Clap = struct
 
   let print_help () =
     Format.printf "\
-      Usage: fp_mc [options]* <caml_file> [-- <solver arguments>*]@.  \
+      Usage: r_type [options]* <caml_file> [-- <solver arguments>*]@.  \
         the arguments passed after the '--' are passed to the underlying \
         horn clause solver@.\
       Options:@.\

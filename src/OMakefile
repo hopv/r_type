@@ -25,9 +25,9 @@ OCAMLPACKS[] =
   ppx_driver
 OCAMLFLAGS = -warn-error A -thread
 
-OCamlProgram(fp_mc, fp_mc)
+OCamlProgram(r_type, r_type)
 
-.DEFAULT: fp_mc$(EXE)
+.DEFAULT: r_type$(EXE)
 
 .SUBDIRS: common concern data mlLoader loader horn_solver
 
