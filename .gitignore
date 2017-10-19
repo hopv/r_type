@@ -17,7 +17,7 @@ _build/
 src/horn_solver/smtLex.ml
 src/horn_solver/smtParse.ml
 src/horn_solver/smtParse.mli
-src/fp_mc
+src/r_type
 *.opt
 *.byte
 *.native
