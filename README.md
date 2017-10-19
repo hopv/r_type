@@ -38,15 +38,14 @@ Then, simply run `omake` at the root of this repository. The binary will be loca
 # Running
 
 ```
-Usage: r_type [options]* <caml_file> [-- <solver arguments>*]
-  the arguments after the '--' are passed to the underlying horn clause solver
+Usage: r_type [options]* <caml_file>
 Options:
    -v                                       verbose output
   --effect_analysis    [on|true|off|false]  (de)activates effect analysis
     default 'on'
   --infer              [on|true|off|false]  (de)activates inference (prints the clauses on stdout if off)
     default 'on'
-  --solver             <cmd>                command running the horn clause solver
+  --solver             <cmd>                command running the horn clause solver, e.g. `hoice` or `z3`
     default 'hoice'
 ```
 
@@ -57,8 +56,7 @@ If you want to use z3, or hoice but with a different command, pass the name of t
 **NB**: by default, z3 does *not* read from `stdin`, which `r_type` requires. Make sure you pass z3 the `-in` flag:
 
 ```bash
-> rtype --solver z3 path_to_my_file.ml -- -in
-# Passed to z3 when spawning it ~~~~~~~~~~^^^
+> rtype --solver "z3 -in" path_to_my_file.ml
 ```
 
 If you only want to inspect the Horn clauses encoding the correctness of your caml program, run `r_type` with `--infer off`. The clauses will be printed on `stdout`.
