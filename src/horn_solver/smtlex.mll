@@ -74,6 +74,7 @@ rule token = parse
 | "\"" { dquoted (Buffer.create 17) lexbuf }
 | "|" { piped (Buffer.create 17) lexbuf }
 | (lcase|hcase) (lcase|hcase|idlegal|digit)* { IDENT (Lexing.lexeme lexbuf) }
+| (idlegal) (lcase|hcase|idlegal|digit)+ { IDENT (Lexing.lexeme lexbuf) }
 
 | eof { EOF }
 | _

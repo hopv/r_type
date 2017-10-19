@@ -76,7 +76,7 @@ module Clap = struct
       )
     ) ;
     ( "--solver",
-      "command running the horn clause solver",
+      "command running the horn clause solver, e.g. `hoice` or `z3`",
       "<cmd>",
       ! clause_solver,
       fun arg -> clause_solver := arg ; Res.Ok ()
