@@ -14,10 +14,14 @@
 # ocamlbuild working directory
 _build/
 
-# ocamlbuild targets
+# menhir targets
+src/loader/fmlparser.ml
+src/loader/fmlparser.mli
 src/horn_solver/smtLex.ml
 src/horn_solver/smtParse.ml
 src/horn_solver/smtParse.mli
+
+# ocamlbuild targets
 src/r_type
 *.opt
 *.byte
