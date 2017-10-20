@@ -1,5 +1,7 @@
 # `r_type`
 
+[![Build Status](https://travis-ci.org/hopv/r_type.svg?branch=master)]
+
 A model-checker for caml programs.
 
 `r_type` translates caml programs to Horn clauses and feeds them to a Horn clause solver, such as [hoice][hoice] for instance.
