@@ -41,6 +41,9 @@ Then, simply run `omake` at the root of this repository. The binary will be loca
 
 ```
 Usage: r_type [options]* <caml_file>
+NB: r_type verifies that function `main` from the input caml
+    file never fails. Hence, make sure that entry point of your
+    program is a function called `main`.
 Options:
    -v                                       verbose output
   --effect_analysis    [on|true|off|false]  (de)activates effect analysis

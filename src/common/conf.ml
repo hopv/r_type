@@ -104,6 +104,9 @@ module Clap = struct
   let print_help () =
     Format.printf "\
       Usage: r_type [options]* <caml_file>@.\
+      NB: r_type verifies that function `main` from the input caml@.    \
+          file never fails. Hence, make sure that entry point of your@.    \
+          program is a function called `main`.@.\
       Options:@.\
     " ;
     List.iter n_args ~f:(
