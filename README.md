@@ -1,6 +1,6 @@
 # `r_type`
 
-[![Build Status](https://travis-ci.org/hopv/r_type.svg?branch=master)]
+[![Build Status](https://travis-ci.org/hopv/r_type.svg?branch=master)](https://travis-ci.org/hopv/r_type)
 
 A model-checker for caml programs.
 
