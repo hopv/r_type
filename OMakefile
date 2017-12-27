@@ -6,3 +6,6 @@ MENHIR_ENABLED = true
 OCAMLOPTFLAGS += -inline 100
 
 .SUBDIRS: src
+
+clean:
+  rm -f OMakefile.omc OMakeroot.omc src/r_type.opt .omakedb*

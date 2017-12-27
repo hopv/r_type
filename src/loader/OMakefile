@@ -24,4 +24,5 @@ OCamlLibrary(loader, fmllexer readFml optimizeVc verificationCondition fmlparser
 
 .PHONY: clean
 clean:
-  rm -f *.cmo *.cmx *.cmi *.cmxa *.a *.omc *.o
+  rm -f *.cmo *.cmx *.cmi *.cmxa *.a *.omc *.o \
+    fmlparser.ml fmlparser.mli
