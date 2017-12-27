@@ -4,6 +4,6 @@ eval `./opam config env`
 ./opam install -y omake.0.10.3 menhir core re2 ppx_deriving ppx_sexp_conv ppx_hash ppx_variants_conv ppx_fields_conv ppx_compare ppx_driver
 eval `./opam config env`
 
-opam --version
+./opam --version
 
 omake
