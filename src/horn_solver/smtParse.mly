@@ -3,7 +3,7 @@
 %}
 
 %token <string> OP
-%token EXISTS LET
+%token EXISTS FORALL LET
 
 %token EOF OPAREN CPAREN
 
@@ -50,7 +50,10 @@ typ:
 body:
 | OPAREN ;
     EXISTS ; OPAREN ; args = list(arg) ; CPAREN ; body = body ;
-  CPAREN { ParseBase.Qtf (args, body) }
+  CPAREN { ParseBase.EQtf (args, body) }
+| OPAREN ;
+    FORALL ; OPAREN ; args = list(arg) ; CPAREN ; body = body ;
+  CPAREN { ParseBase.UQtf (args, body) }
 | OPAREN ; LET ; OPAREN ;
   bindings = list(binding) ; CPAREN ; body = body ;
 CPAREN {

@@ -6,7 +6,9 @@ type args = (string * string) list
 (** An ADT representing a predicate definition's body. *)
 type body =
 (** A existential quantifier. *)
-| Qtf of args * body
+| EQtf of args * body
+(** A universall quantifier. *)
+| UQtf of args * body
 (** Operator application. *)
 | App of string * body list
 (** Predicate application. *)
@@ -30,8 +32,10 @@ let fmt_args fmt (args: args) =
 
 (** Pretty printer for body, good old ugly recursion. *)
 let rec fmt_body fmt: body -> unit = function
-| Qtf (args, body) ->
+| EQtf (args, body) ->
   Format.fprintf fmt "Exists (%a). %a" fmt_args args fmt_body body
+| UQtf (args, body) ->
+  Format.fprintf fmt "Forall (%a). %a" fmt_args args fmt_body body
 | App ("and", arg :: []) -> Format.fprintf fmt "%a" fmt_body arg
 | App ("or", arg :: []) -> Format.fprintf fmt "%a" fmt_body arg
 | App (op, arg :: []) ->

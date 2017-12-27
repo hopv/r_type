@@ -41,6 +41,7 @@ rule token = parse
 | "model" {MODEL}
 | "define-fun" {DEFINE}
 | "exists" {EXISTS}
+| "forall" {FORALL}
 | "let" {LET}
 
 | "Int" {INT}
