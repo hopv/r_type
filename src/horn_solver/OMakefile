@@ -9,7 +9,7 @@ OCAMLFLAGS = -warn-error A -thread
 OCAMLPACKS[] =
   core
 
-OCamlLibrary(horn_solver, smtParse smtLex parseBase solver)
+OCamlLibrary(horn_solver, parseBase smtLex smtParse solver)
 
 .PHONY: clean
 clean:
