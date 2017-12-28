@@ -6,7 +6,7 @@ A model-checker for caml programs.
 
 `r_type` translates caml programs to Horn clauses and feeds them to a Horn clause solver, such as [hoice][hoice] for instance.
 
-It supports a subset of caml including higher-order functions, nested recursive calls, integers and booleans. Floats and ADTs are currently not supported.
+It supports a subset of caml including higher-order functions, nested recursive calls, integers and booleans. Floats, ADTs, modules... are currently not supported. You can get a sense of the fragment `r_type` supports by looking at [our benchmarks][benchs].
 
 # Build
 
@@ -37,7 +37,7 @@ So, a complete setup to compile `r_type` looks like
 
 Then, simply run `omake` at the root of this repository. The binary will be located at `src/r_type.opt` (`src/r_type` is a soft link to it).
 
-This should work, but the most up to date build workflow is always the [travis build script](https://github.com/hopv/r_type/blob/master/.travis.sh).
+This should work, but the most up to date build workflow is always the [travis build script][travis script].
 
 # Running
 
@@ -68,6 +68,8 @@ If you want to use z3, or hoice but with a different command, pass the name of t
 
 If you only want to inspect the Horn clauses encoding the correctness of your caml program, run `r_type` with `--infer off`. The clauses will be printed on `stdout`.
 
+[benchs]: https://github.com/hopv/benchmarks/tree/master/caml/lia (hopv benchmarks)
+[travis script]: https://github.com/hopv/r_type/blob/master/.travis.sh (travis build script)
 [hoice]: https://github.com/hopv/hoice (hoice repository on github)
 [z3]: https://github.com/Z3Prover/z3 (z3 repository on github)
 [opam]: https://opam.ocaml.org/doc/Install.html (opam official page)
