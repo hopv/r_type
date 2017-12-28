@@ -37,6 +37,8 @@ So, a complete setup to compile `r_type` looks like
 
 Then, simply run `omake` at the root of this repository. The binary will be located at `src/r_type.opt` (`src/r_type` is a soft link to it).
 
+This should work, but the most up to date build workflow is always the [travis build script](https://github.com/hopv/r_type/blob/master/.travis.sh).
+
 # Running
 
 ```
