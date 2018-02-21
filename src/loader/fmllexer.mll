@@ -77,6 +77,7 @@ rule token = parse
 | "fail" {FAIL}
 | "select" {SELECT}
 | "when" {WHEN}
+| "mod" {MOD}
 | digitnz digit*
    {let s = Lexing.lexeme lexbuf in INT(int_of_string s)}
 | minus digitnz digit*

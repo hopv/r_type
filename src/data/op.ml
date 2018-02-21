@@ -4,6 +4,7 @@ type t =
   | Minus
   | Times
   | Div
+  | Mod
   | Eq
   | Neq
   | Leq
@@ -31,6 +32,7 @@ let string_of = function
   | Minus -> "-"
   | Times -> "*"
   | Div -> "/"
+  | Mod -> "mod"
   | Eq -> "="
   | Neq -> "<>"
   | Leq -> "<="
@@ -53,6 +55,7 @@ let of_string = function
   | "-" -> Some Minus
   | "/" -> Some Div
   | "*" -> Some Times
+  | "mod" -> Some Mod
   | "=" -> Some Eq
   | "<>" -> Some Neq
   | "<=" -> Some Leq
@@ -131,6 +134,7 @@ module ToSmt2 = struct
   | Minus -> [ "-" ]
   | Times -> [ "*" ]
   | Div -> [ "div" ]
+  | Mod -> [ "mod" ]
   | Eq -> [ "=" ]
   | Neq -> [ "not" ; "=" ]
   | Leq -> [ "<=" ]

@@ -165,6 +165,7 @@ include T
       | Minus -> true
       | Times -> true
       | Div -> true
+      | Mod -> true
       | And_ -> true
       | Or_ -> true
       | _ -> false

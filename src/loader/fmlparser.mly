@@ -11,7 +11,7 @@
 
 %token <int> INT
 %token <Objt.id> ID
-%token MINUS PLUS TIMES DIV
+%token MINUS PLUS TIMES DIV MOD
 %token EOF LPAREN RPAREN LBRACE RBRACE COLON VLINE IF THEN  ELSE  LET REC FUNC INTEGER IN FAIL ASSERT RECAND SELECT WHEN ARROW TRUE FALSE IMPL
 
 %left ASSERT
@@ -53,6 +53,7 @@ condition:
   | LPAREN condition RPAREN       { $2 }
   | condition PLUS  condition     { Op2($1, Plus , $3) }
   | condition MINUS condition     { Op2($1, Minus, $3) }
+  | condition MOD condition       { Op2($1, Mod, $3)   }
   | condition TIMES condition     { Op2($1, Times, $3) }
   | condition DIV   condition     { Op2($1, Div  , $3) }
   | condition EQ    condition     { Op2($1, Eq   , $3) }
@@ -61,9 +62,9 @@ condition:
   | condition LT    condition     { Op2($1, Lt   , $3) }
   | condition GEQ   condition     { Op2($1, Geq  , $3) }
   | condition GT    condition     { Op2($1, Gt   , $3) }
-  | condition AND condition       { Op2($1, And_, $3) }
-  | condition OR condition        { Op2($1, Or_, $3) }
-  | condition IMPL condition        { Op2($1, Impl, $3) }
+  | condition AND condition       { Op2($1, And_, $3)  }
+  | condition OR condition        { Op2($1, Or_, $3)   }
+  | condition IMPL condition      { Op2($1, Impl, $3)  }
   | MINUS condition               { Op1(Minus, $2) }
   | NOT condition                 { Op1(Not_, $2) }
   | value                         { Value($1) }
