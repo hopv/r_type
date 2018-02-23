@@ -1181,13 +1181,13 @@ module ToSmt2 = struct
   )
 
   let typ_of_op op = match op with
-  | Op.Plus | Op.Minus | Op.Times | Op.Div -> Int
+  | Op.Plus | Op.Minus | Op.Times | Op.Div | Op.Mod -> Int
   | Op.Neq | Op.Leq | Op.Lt | Op.Geq | Op.Gt | Op.Eq
   | Op.Not_ | Op.And_ | Op.Or_ | Op.Iff | Op.Impl | Op.ItoB -> Bool
   | _ -> Op.string_of op |> Format.sprintf "unsupported operator %s" |> failwith
 
   let typ_of_op_args op = match op with
-  | Op.Plus | Op.Minus | Op.Times | Op.Div
+  | Op.Plus | Op.Minus | Op.Times | Op.Div | Op.Mod
   | Op.Neq | Op.Leq | Op.Lt | Op.Geq | Op.Gt | Op.ItoB -> Int
   | Op.Not_ | Op.And_ | Op.Or_ | Op.Iff | Op.Impl -> Bool
   | Op.Eq -> Unk
