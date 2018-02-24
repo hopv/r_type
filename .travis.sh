@@ -1,3 +1,5 @@
+#! /bin/bash
+
 wget https://raw.github.com/ocaml/opam/master/shell/opam_installer.sh -O - | sh -s .
 
 eval `./opam config env`
