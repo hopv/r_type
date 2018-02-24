@@ -15,14 +15,14 @@ Make sure you have [opam][opam] installed, ideally switched to the latest stable
 - `omake.0.10.2` (build only)
 - `menhir`
 - `core`
-- `re2.0.9.0`
-- `ppx_deriving.4.2.1`
-- `ppx_sexp_conv.0.9.0`
-- `ppx_hash.0.9.0`
-- `ppx_variants_conv.0.9.0`
-- `ppx_fields_conv.0.9.0`
-- `ppx_compare.0.9.0`
-- `ppx_driver.0.9.1`
+- `re2.v0.9.0`
+- `ppx_deriving.4.2`
+- `ppx_sexp_conv.v0.9.0`
+- `ppx_hash.v0.9.0`
+- `ppx_variants_conv.v0.9.0`
+- `ppx_fields_conv.v0.9.0`
+- `ppx_compare.v0.9.0`
+- `ppx_driver.v0.9.1`
 
 So, a complete setup to compile `r_type` looks like
 
@@ -32,7 +32,7 @@ So, a complete setup to compile `r_type` looks like
 > opam switch 4.05.0
 > eval `opam config env`
   # Install relevant packages...
-> opam install omake.0.10.3 menhir core re2.0.9.0 ppx_deriving.4.2.1 ppx_sexp_conv.0.9.0 ppx_hash.0.9.0 ppx_variants_conv.0.9.0 ppx_fields_conv.0.9.0 ppx_compare.0.9.0 ppx_driver.0.9.1
+> opam install -y omake.0.10.2 menhir core re2.v0.9.0 ppx_deriving.4.2 ppx_sexp_conv.v0.9.0 ppx_hash.v0.9.0 ppx_variants_conv.v0.9.0 ppx_fields_conv.v0.9.0 ppx_compare.v0.9.0 ppx_driver.v0.9.1
 ```
 
 Then, simply run `omake` at the root of this repository. The binary will be located at `src/r_type.opt` (`src/r_type` is a soft link to it).
