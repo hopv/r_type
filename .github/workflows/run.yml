@@ -33,6 +33,8 @@ jobs:
         with:
           ocaml-version: ${{ matrix.ocaml-version }}
 
-      # Runs a single command using the runners shell
+      - name: Setup
+        run: ./.github/workflows/setup.sh
+
       - name: Compile
-        run: ./travis.sh
+        run: omake

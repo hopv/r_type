@@ -1,6 +1,6 @@
 #! /bin/bash
 
-wget https://raw.github.com/ocaml/opam/master/shell/opam_installer.sh -O - | sh -s .
+./opam --version
 
 eval `./opam config env`
 ./opam update
@@ -9,5 +9,3 @@ eval `./opam config env`
 eval `./opam config env`
 
 ./opam --version
-
-omake
