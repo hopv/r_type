@@ -2,7 +2,7 @@
 open Core
 
 module Make = functor(M : Hashtbl.Key) -> struct
-  module H = Hashable.Make(M)
+  module H = Hashable.Make_and_derive_hash_fold_t(M)
 
   type t = {
     els: M.t list;

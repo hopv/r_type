@@ -88,7 +88,7 @@ module Clap = struct
           List.fold_left split ~init:[] ~f:(
             fun acc s ->
               let s = String.strip s in
-              if s <> "" then (
+              if not (String.is_empty s) then (
                 (* Format.printf "%s@." s ; *)
                 s :: acc
               ) else acc
@@ -133,39 +133,44 @@ module Clap = struct
   )
 
   let run () =
+    let first_is (expected: string) ((got, _): string * 'a): bool = String.equal expected got in
+
     let rec loop = function
-    | "-h" :: tail | "--help" :: tail -> (
-      print_help () ;
-      exit 0
-    )
-    | [ file ] -> ml_file := Some file ; Res.Ok ()
-    | opt :: tail when (
-      List.find n_args ~f:( fun (o, _) -> o = opt ) <> None
-    ) -> (
-      match List.find n_args ~f:( fun (o, _) -> o = opt ) with
-      | Some (_, (_, action)) -> action () ; loop tail
-      | None -> failwith "unreachable"
-    )
-    | arg :: value :: tail -> (
-      match List.find u_args ~f:(
-        fun (opt, _, _, _, _) -> opt = arg
-      ) with
-      | Some (opt, _, _, _, action) ->
-        let res =
-          action value |> parse_res_chain (
-            sprintf "on option '%s'" arg
-          )
-        in
-        if is_okay res then loop tail else res
-      | None -> Res.Err (arg, "unknown option")
-    )
-    (* The next case is actually necessarily an error **for now**. The error
-    will be caught after, when checking that the file is not `None. *)
-    | [] -> Res.Ok ()
+        | "-h" :: tail | "--help" :: tail -> (
+          print_help () ;
+          exit 0
+        )
+
+        | [ file ] -> ml_file := Some file ; Res.Ok ()
+
+        (* This case is actually necessarily an error **for now**. The error
+        will be caught after, when checking that the file is not `None. *)
+        | [] -> Res.Ok ()
+
+        | arg :: value :: tail -> (
+            match List.find n_args ~f:(first_is arg) with
+            | Some (_, (_, action)) -> (
+                action ();
+                value :: tail |> loop
+            )
+            | None -> (
+                match List.find u_args ~f:(fun (opt, _, _, _, _) -> String.equal opt arg) with
+                | Some (opt, _, _, _, action) -> (
+                    let res =
+                      action value |> parse_res_chain (
+                        sprintf "on option '%s'" arg
+                      )
+                    in
+                    if is_okay res then loop tail else res
+                )
+                | None -> Res.Err (arg, "unknown option")
+            )
+        )
     in
 
+    let argv = Sys.get_argv () in
     let res =
-      Array.sub Sys.argv ~pos:1 ~len:(Array.length Sys.argv - 1)
+      Array.sub argv ~pos:1 ~len:(Array.length argv - 1)
       |> Array.to_list |> loop
     in
     ( if is_okay res then match ! ml_file with

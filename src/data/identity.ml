@@ -1,6 +1,8 @@
 open Core
 
-include Mappable.Make(struct include String let show = ident end)
+include Mappable.Make (
+    struct include String let show = ident end
+)
 
 module Short = struct
   type nonrec t = t

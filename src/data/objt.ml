@@ -99,8 +99,8 @@ let vid_of_exn = function
 
 let does_match_vid obj k =
   match obj with
-  | VarObj vid -> if vid = k then true else false
-  | SpecialVar vid -> if vid = k then true else false
+  | VarObj vid -> String.equal vid k
+  | SpecialVar vid -> String.equal vid k
   | _ -> false
 
 let subst obj (k, v) =

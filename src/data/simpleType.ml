@@ -41,7 +41,7 @@ module Env = struct
 
   let find_exn (self : 'a t) (key : Identity.t) : 'a =
     try find_exn self key with
-    | Not_found -> failwith ("Not found: " ^ key)
+    | e -> failwith ("Error searching for " ^ key ^ " (" ^ (Exn.to_string e) ^ ")")
 end
 
 module Subst = struct
@@ -74,7 +74,7 @@ module Subst = struct
 
   let add tysubst ~key ~data =
     match data with
-    | Var vid when vid = key -> tysubst
+    | Var vid when String.equal vid key -> tysubst
     | _ -> add tysubst ~key ~data
 
   let resolve (tyenv : Env.tt) tysubst =

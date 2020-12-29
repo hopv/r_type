@@ -17,7 +17,6 @@ OCAMLPACKS[] =
   ppx_variants_conv
   ppx_fields_conv
   ppx_compare
-  ppx_driver
 OCAMLFLAGS = -warn-error A -thread
 
 OCamlLibrary(loader, fmllexer readFml optimizeVc verificationCondition fmlparser loader)

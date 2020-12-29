@@ -27,7 +27,7 @@ module Util = struct
 
   let shuffle (xs : 'a list) : 'a list =
     let ys = List.map xs ~f:(fun x -> (Random.float 1., x)) in
-    let ys' = List.sort ~cmp:(fun (score, x) (score', y) -> Float.compare score score') ys in
+    let ys' = List.sort ~compare:(fun (score, x) (score', y) -> Float.compare score score') ys in
     List.map ys' ~f:(fun (_, x) -> x)
 
   let random (xs : 'a list) : ('a * 'a list) option =
