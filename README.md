@@ -1,10 +1,11 @@
-# `r_type`
+![CI](https://github.com/hopv/r_type/workflows/CI/badge.svg)
 
-[![Build Status](https://travis-ci.org/hopv/r_type.svg?branch=master)](https://travis-ci.org/hopv/r_type)
+# `r_type`
 
 A model-checker for caml programs.
 
-`r_type` translates caml programs to Horn clauses and feeds them to a Horn clause solver, such as [hoice][hoice] for instance.
+`r_type` translates caml programs to Horn clauses and feeds them to a Horn clause solver, such as
+[hoice][hoice] for instance.
 
 It supports a subset of caml including higher-order functions, nested recursive calls, integers and booleans. Floats, ADTs, modules... are currently not supported. You can get a sense of the fragment `r_type` supports by looking at [our benchmarks][benchs].
 

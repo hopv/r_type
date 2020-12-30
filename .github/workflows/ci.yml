@@ -37,4 +37,4 @@ jobs:
         run: ./.github/workflows/setup.sh
 
       - name: Compile
-        run: omake
+        run: eval $(opam env) && omake

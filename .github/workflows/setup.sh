@@ -1,12 +1,11 @@
 #! /bin/bash
 
+opam --version
 ocamlc --version
 
-opam --version
-
-eval `opam config env`
-opam update
 eval $(opam config env)
+opam update
+eval $(opam env)
 
 echo "installing dependencies"
 opam install -y \
@@ -15,6 +14,8 @@ opam install -y \
     ppx_hash.v0.14.0 ppx_sexp_conv.v0.14.1 ppx_variants_conv.v0.14.1 \
     re2.v0.14.0
 echo "done installing dependencies"
-eval $(opam config env)
+eval $(opam env)
 
 opam --version
+ocamlc --version
+omake --version
