@@ -33,10 +33,16 @@ module Env = struct
   let to_string el =
     "\n" ^ List.fold (to_alist el) ~init:"" ~f:(fun str (key, data) ->
       key ^ ": " ^ Essential.to_string data ^ "\n" ^ str)
-  let cons x (key, data) = add x ~key ~data
+  let cons x (key, data) =
+    match add x ~key ~data with
+    | `Ok x -> x
+    | `Duplicate -> assert false
   let cons_int x key = cons x (key, Int_)
   module T = struct
-    let (%<<) (x : tt) (key, data) = add x ~key ~data
+    let (%<<) (x : tt) (key, data) =
+      match add x ~key ~data with
+      | `Ok x -> x
+      | `Duplicate -> assert false
   end
 
   let find_exn (self : 'a t) (key : Identity.t) : 'a =
@@ -75,7 +81,10 @@ module Subst = struct
   let add tysubst ~key ~data =
     match data with
     | Var vid when String.equal vid key -> tysubst
-    | _ -> add tysubst ~key ~data
+    | _ ->
+        match add tysubst ~key ~data with
+        | `Ok tysubst -> tysubst
+        | `Duplicate -> assert false
 
   let resolve (tyenv : Env.tt) tysubst =
     let rec assoc_or_fallback tysubst ty =

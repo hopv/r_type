@@ -19,7 +19,7 @@ end
 
 let rec remove_non_recursive ?(reports = []) (clauses : Cond.Horn.t) (reduce_multi_impl : bool) : (VcControl.DetectNonRecursiveUnknown.Report.t list * Cond.Horn.t) =
   let new_reports = VcControl.DetectNonRecursiveUnknown.run clauses reduce_multi_impl in
-  if new_reports = [] then
+  if Stdlib.(new_reports = []) then
     reports, clauses
   else
     let rec apply new_reports (reports,clauses) =

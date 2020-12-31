@@ -22,6 +22,7 @@ OCAMLPACKS[] =
   ppx_variants_conv
   ppx_fields_conv
   ppx_compare
+  compiler-libs.common
 OCAMLFLAGS = -warn-error A -thread
 
 OCamlProgram(r_type, r_type)

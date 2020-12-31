@@ -113,7 +113,7 @@ module P = struct
     match const with
     | Pconst_integer (int_str, _suffix) -> Objt.intobj (Int.of_string int_str)
     | Pconst_char c -> Objt.varobj (String.of_char c)
-    | Pconst_string (str, _) -> Objt.varobj str
+    | Pconst_string (str, _, _) -> Objt.varobj str
     | _ -> failwith "unsupported constant"
 
   let p_bind_pattern (self : t) (e : Expr.t) ({ ppat_desc = pat; ppat_loc = loc; ppat_attributes = _attrs } : pattern) : (Identity.t * Expr.t) list =
@@ -138,7 +138,7 @@ module P = struct
 end
 
 let parse filename : SugarProgram.t =
-  let structure = Pparse.parse_implementation ~tool_name:"fpice" Format.std_formatter filename in
+  let structure = Pparse.parse_implementation ~tool_name:"fpice" filename in
   P.convert P.converter structure
 
 let desugar (sprogram : SugarProgram.t) : Program.t = Desugar.main sprogram

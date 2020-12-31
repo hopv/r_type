@@ -10,7 +10,7 @@ let print_type_env type_env model =
   let types = Cond.UnknownSubst.Map.empty in
   Type.Env.assign_unknown type_env types |> Type.Env.to_string
   |> Format.printf "%s" ;
-  if model <> [] then (
+  if Stdlib.(model <> []) then (
     Format.printf "where@.@." ;
     List.iter model ~f:(
       Format.printf "@[<v>%a@]@." ParseBase.fmt_def

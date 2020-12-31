@@ -91,7 +91,7 @@ module Func = struct
   and args = Identity.t list
   [@@deriving sexp, eq, ord, hash]
 
-  let is_main (self : t) = self.name = "main"
+  let is_main (self : t) = Stdlib.(self.name = "main")
 
   let make ?annotation ~name ~args ~exp : t =
     let annotation = Option.value ~default:(Annotation.make ()) annotation in
@@ -136,7 +136,9 @@ let type_env (Program fs) =
 let to_func_map (program : Typedef.t) : Func.t Identity.Map.t =
   let funcs = recfuns program in
   List.fold funcs ~init:Identity.Map.empty ~f:(fun mp func ->
-    Identity.Map.add mp ~key:func.Func.name ~data:func
+      match Identity.Map.add mp ~key:func.Func.name ~data:func with
+      | `Ok mp -> mp
+      | `Duplicate -> assert false
   )
 
 module Info = struct
@@ -216,9 +218,7 @@ module SimpleTypeInfer = struct
     let (tyenv, tyrel) = List.fold fs ~f:infer_each_func ~init:(init_tyenv, Relation.empty) in
     let tyenv = Relation.unify (tyenv (* |> Env.inspect *) ) (tyrel (* |> Relation.inspect *) ) in
     let fids = List.map fs ~f:(fun ({ Func.name } : Func.t) -> name) in
-    Env.filteri tyenv ~f:(fun ~key ~data -> List.mem fids key ~equal:(
-      fun lhs rhs -> lhs = rhs)
-    )
+    Env.filteri tyenv ~f:(fun ~key ~data -> List.mem fids key ~equal:Stdlib.(=))
 end
 
 let use_refinement_annotation = ref true

@@ -17,6 +17,7 @@ OCAMLPACKS[] =
   ppx_variants_conv
   ppx_fields_conv
   ppx_compare
+  compiler-libs.common
 OCAMLFLAGS = -warn-error A -thread
 
 OCamlLibrary(mlLoader, alphaConv letNormal simplify kNormal elimAssert bindValueReduction betaReduction convMain closureConv sugarProgram desugar mlLoader)

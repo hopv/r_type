@@ -142,14 +142,14 @@ module DetectNonRecursiveUnknown = struct
       let reports_with_count = List.map reports ~f:(fun (un, conds) ->
         (List.length conds, (un, conds))
       ) in
-      let reports_with_count = List.sort reports_with_count ~cmp:(fun a b -> Int.compare (Tuple.T2.get1 a) (Tuple.T2.get1 b)) in
+      let reports_with_count = List.sort reports_with_count ~compare:(fun a b -> Int.compare (Tuple.T2.get1 a) (Tuple.T2.get1 b)) in
       List.map reports_with_count ~f:Tuple.T2.get2
 
     let select_effective_one (reports : t list) : t option =
       let reports_with_count = List.map reports ~f:(fun (un, conds) ->
         (List.fold conds ~init:[] ~f:(fun acc x -> acc @ Cond.uapps_of x) |> List.length, (un, conds))
       ) in
-      let reports_with_count = List.sort reports_with_count ~cmp:(fun a b -> Int.compare (Tuple.T2.get1 a) (Tuple.T2.get1 b)) in
+      let reports_with_count = List.sort reports_with_count ~compare:(fun a b -> Int.compare (Tuple.T2.get1 a) (Tuple.T2.get1 b)) in
       List.hd reports_with_count |> Option.map ~f:Tuple.T2.get2
   end
 

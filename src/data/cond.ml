@@ -6,14 +6,14 @@ module Subst = struct
   [@@deriving compare, eq, sexp, ord, hash]
 
   let empty = []
-  let add self (k, v) : t =
-    if List.Assoc.mem self ~equal:(=) k then self
-    else if k = v then self
+  let add (self:t) ((k:Identity.t), (v:Identity.t)) : t =
+    if List.Assoc.mem self ~equal:Stdlib.(=) k then self
+    else if Stdlib.(k = v) then self
     else (k, v) :: self
 
   let subst self orig_id new_id : t =
-    List.map self ~f:(fun (k, v) -> (k, if v = orig_id then new_id else v)) |>
-    List.filter ~f:(fun (k, v) -> k <> v)
+    List.map self ~f:(fun (k, v) -> (k, if Stdlib.(v = orig_id) then new_id else v)) |>
+    List.filter ~f:(fun (k, v) -> Stdlib.(k <> v))
 
   module T = struct
     let (@<<) mp (k, v) = (k, v) :: mp
@@ -64,9 +64,9 @@ module Operation = struct
   let false_ = Value Objt.false_
   let and_ x y = op2 x Op.And_ y
   let and_s x y =
-    if x = Value (Objt.true_) then
+    if Stdlib.(x = Value) (Objt.true_) then
       y
-    else if y = Value (Objt.true_) then
+    else if Stdlib.(y = Value) (Objt.true_) then
       x
     else
       and_ x y
@@ -358,7 +358,7 @@ module UnknownApp = struct
 
   let substs_of ((un, cs) : t) : (Identity.t * Typedef.t) list =
     let vids = UnknownPredicate.vids_of un in
-    Option.value_exn (List.zip vids cs)
+    List.zip_exn vids cs
 
   let predicate_of ((un, cs) : t) : UnknownPredicate.t = un
   let predicate_vids_of (self : t) : Identity.t list = UnknownPredicate.vids_of (predicate_of self)
@@ -412,7 +412,7 @@ module Simplifier = struct
       | Op2 (Value v1, Op.Eq, Value v2) when Objt.is_var v1 && Objt.is_var v2 ->
         let vid1 = Objt.vid_of_exn v1 in
         let vid2 = Objt.vid_of_exn v2 in
-        if vid1 = vid2 then Value Objt.true_ else cond
+        if Stdlib.(vid1 = vid2) then Value Objt.true_ else cond
       | Op2 (c1, op, c2) ->
         Op2 (simplify c1, op, simplify c2)
       | x -> x
@@ -1086,7 +1086,7 @@ let rec alpha_rename (t : t) =
       let ts2',map =
         let aux t =
           match t with
-          | Value (Objt.VarObj x) when 1 = List.length (List.filter ~f:((=) x) fv) ->
+          | Value (Objt.VarObj x) when 1 = List.length (List.filter ~f:(Stdlib.(=) x) fv) ->
               t, None
           | t ->
               let y = AlphaConv.L.gen() in
@@ -1176,7 +1176,7 @@ module ToSmt2 = struct
     (* failwith "can't merge int and bool types" *)
     Int
   | _ -> (
-    assert (t1 = t2) ;
+    assert Stdlib.(t1 = t2) ;
     t1
   )
 
@@ -1211,7 +1211,7 @@ module ToSmt2 = struct
 
   let typ_of_term (vars: (Objt.id * typ) list) term = match term with
   | Value (Objt.VarObj vid) -> (
-    match List.find vars (fun (v, t) -> v = vid) with
+    match List.find vars (fun (v, t) -> Stdlib.(v = vid)) with
     | Some (_, t) -> t
     | None -> Unk
   )
@@ -1238,7 +1238,7 @@ module ToSmt2 = struct
     (* Format.printf "var %s@." vid ; *)
     let (vars, added) = List.fold_left vars ~init:([], false) ~f:(
       fun (vars, added) (var, typ') ->
-        if not added && var = vid then
+        if not added && Stdlib.(var = vid) then
           (var, merge_types typ typ') :: vars, true
         else (var, typ') :: vars, added
     ) in
@@ -1248,7 +1248,7 @@ module ToSmt2 = struct
   | Value (Objt.Array _) -> failwith "arrays are not supported..."
   | UApp (un, terms) -> (
     let preds = if List.mem ~equal:(
-      fun p p' -> p.UnknownPredicate.id = p'.UnknownPredicate.id
+      fun p p' -> Stdlib.(p.UnknownPredicate.id = p'.UnknownPredicate.id)
     ) preds un then preds else un :: preds in
     List.fold_left terms ~init:(vars, preds) ~f:(
       fun (vars, preds) (term: t) ->
@@ -1256,7 +1256,7 @@ module ToSmt2 = struct
     )
   )
   | Op1 (op, term) -> (
-    assert (typ = typ_of_op op) ;
+    assert Stdlib.(typ = typ_of_op op) ;
     collect ~debug:debug ~typ:(typ_of_op_args op) vars preds term
   )
   | Op2 (lft, op, rgt) -> (
@@ -1348,7 +1348,7 @@ module ToSmt2 = struct
         List.iter split (fun (lhs, rhs) ->
           List.iter rhs (
             fun rhs ->
-              let positive = rhs <> None in
+              let positive = Stdlib.(rhs <> None) in
               Format.fprintf fmt "(assert@.  (" ;
               ( if positive then
                   Format.fprintf fmt "forall ("
@@ -1372,7 +1372,7 @@ module ToSmt2 = struct
               ( if positive then
                   Format.fprintf fmt "(=>@.      "
               ) ;
-              ( if lhs = [] then (
+              ( if Stdlib.(lhs = []) then (
                   Format.fprintf fmt "true@."
                 ) else (
                   Format.fprintf fmt "( and" ;

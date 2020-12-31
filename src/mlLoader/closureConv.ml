@@ -58,7 +58,10 @@ module Env = struct
   type t = Element.t Identity.Map.t
 
   let empty = Identity.Map.empty
-  let add (self : t) ~key ~data = Identity.Map.add self ~key ~data
+  let add (self : t) ~key ~data =
+    match Identity.Map.add self ~key ~data with
+    | `Ok self -> self
+    | `Duplicate -> assert false
   let add_closure self ~key ~data = add self ~key ~data:(data)
   let add_global_function self ~key ~data = add self ~key ~data:(data, [])
 

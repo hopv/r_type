@@ -18,11 +18,11 @@ module RefType = struct
   let rec subst self orig_var new_var =
     match self with
     | Int_ (v, cond) ->
-        if v = orig_var
+        if Stdlib.(v = orig_var)
         then Int_ (new_var, Cond.subst cond orig_var new_var)
         else Int_ (v, Cond.subst cond orig_var new_var)
     | Func (v, t1, t2) ->
-        if v = orig_var
+        if Stdlib.(v = orig_var)
         then Func (new_var, subst t1 orig_var new_var, subst t2 orig_var new_var)
         else Func (v, subst t1 orig_var new_var, subst t2 orig_var new_var)
     | _ -> self
@@ -82,7 +82,7 @@ module RefType = struct
     match self with
     | Int_ (nu, _) -> nu
     | Func (nu, _, _) -> nu
-    | _ -> failwiths "unexpected" self sexp_of_t
+    | _ -> failwith "unexpected"
 
   let arg = function
   | Func (vid, t1, t2) -> t1
@@ -217,7 +217,10 @@ module Env = struct
   module T = struct
     let (@<<) (map, cs) = function
       | Element.Condition cond -> (map, cond :: cs)
-      | Element.Mapping (key, data) -> (Map.add map ~key ~data, cs)
+      | Element.Mapping (key, data) ->
+          match Map.add map ~key ~data with
+          | `Ok map -> map, cs
+          | `Duplicate -> assert false
 
     let from_condition cond = Element.Condition cond
     let from_map (k, v) = Element.Mapping (k, v)
@@ -228,7 +231,7 @@ module Env = struct
 
   let from_simple_type_env simptyenv =
     SimpleType.Env.fold simptyenv ~init:empty ~f:(fun ~key ~data tyenv ->
-      T.(tyenv @<< from_map (key, (RefType.FromSimpleType.refine ~prefix:key ~main:(key = "main") data)))
+      T.(tyenv @<< from_map (key, (RefType.FromSimpleType.refine ~prefix:key ~main:Stdlib.(key = "main") data)))
     )
 
   let to_string (mp, conds) =

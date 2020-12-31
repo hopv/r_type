@@ -10,7 +10,10 @@ class ['a] scope =
     val mutable vmap = (AssignMap.empty : 'a AssignMap.t)
     method get = vmap
     method set nmap = vmap <- nmap
-    method add vkey vid = vmap <- AssignMap.add vmap vkey vid
+    method add vkey vid =
+      match AssignMap.add vmap vkey vid with
+      | `Ok vmap' -> vmap <- vmap'
+      | `Duplicate -> assert false
     method mem vkey = AssignMap.mem vmap vkey
     method find vkey = AssignMap.find vmap vkey
   end

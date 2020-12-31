@@ -43,7 +43,7 @@ let main (config : Config.t) = (fun () ->
       List.map (Type.RefType.conds_of ty) ~f:Cond.uapps_of |> List.concat |> List.map ~f:Cond.UnknownApp.predicate_of in
     let unknown_predicates =
       List.map (Type.Env.types_of tyenv) ~f:unknowns_of |>
-      List.concat |> List.dedup ~compare:UnknownPredicate.compare
+      List.concat |> List.dedup_and_sort ~compare:UnknownPredicate.compare
     in
     create
       ~type_env:tyenv
