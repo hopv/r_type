@@ -64,9 +64,9 @@ module Operation = struct
   let false_ = Value Objt.false_
   let and_ x y = op2 x Op.And_ y
   let and_s x y =
-    if Stdlib.(x = Value) (Objt.true_) then
+    if Stdlib.(x = Value Objt.true_) then
       y
-    else if Stdlib.(y = Value) (Objt.true_) then
+    else if Stdlib.(y = Value Objt.true_) then
       x
     else
       and_ x y

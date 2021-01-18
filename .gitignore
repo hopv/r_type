@@ -15,6 +15,7 @@
 _build/
 
 # menhir targets
+src/loader/fmllexer.ml
 src/loader/fmlparser.ml
 src/loader/fmlparser.mli
 src/horn_solver/smtLex.ml
