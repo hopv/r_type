@@ -36,13 +36,13 @@ module Env = struct
   let cons x (key, data) =
     match add x ~key ~data with
     | `Ok x -> x
-    | `Duplicate -> assert false
+    | `Duplicate -> x
   let cons_int x key = cons x (key, Int_)
   module T = struct
     let (%<<) (x : tt) (key, data) =
       match add x ~key ~data with
       | `Ok x -> x
-      | `Duplicate -> assert false
+      | `Duplicate -> x
   end
 
   let find_exn (self : 'a t) (key : Identity.t) : 'a =
@@ -87,9 +87,9 @@ module Subst = struct
         | `Duplicate -> assert false
 
   let resolve (tyenv : Env.tt) tysubst =
-    let rec assoc_or_fallback tysubst ty =
+    let assoc_or_fallback tysubst ty =
       let rec fallback_var = function
-      | Var vid -> Int_
+      | Var _vid -> Int_
       | Func (t1, t2) ->
           Func (fallback_var t1, fallback_var t2)
       | x -> x in

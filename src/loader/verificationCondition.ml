@@ -69,7 +69,7 @@ let rec gen tyenv exp : Cond.t * Type.Extended.t =
   | e -> Exn.reraise e "verification condition calculation failed"
 
 let vc tyenv (Program (fs)) =
-  let vc_f ({ Func.name ; Func.args ; Func.exp } : Func.t) =
+  let vc_f ({ Func.name ; Func.args ; Func.exp ; _ } : Func.t) =
     let ftype = Type.Env.find_exn tyenv name in
     let var_types =
       let rec to_list xs t =
@@ -90,7 +90,7 @@ let vc tyenv (Program (fs)) =
             [] -> t
           | x :: xs' ->
             match t with
-              Type.RefType.Func (v, arg_type, rtn_type) -> get_rtn_type xs' (Type.RefType.subst rtn_type v x)
+              Type.RefType.Func (v, _arg_type, rtn_type) -> get_rtn_type xs' (Type.RefType.subst rtn_type v x)
             | _ -> t
       in get_rtn_type args ftype
     in

@@ -1,6 +1,6 @@
 open Core
 open SugarProgram
-open Util
+open! Util
 
 module L = Label.Make (struct
   let label = "convMain"

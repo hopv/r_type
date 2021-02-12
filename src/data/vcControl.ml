@@ -26,7 +26,7 @@ module AlphaConvUnParams = struct
     let assume_eqs = ref [] in
     let new_cond = Cond.UApp_plus.map cond ~f:(fun un ->
       let uapp_conds =
-        List.fold_right (Cond.UnknownApp.substs_of un) ~init:[] ~f:(fun (kvid, vcond) uapp_conds ->
+        List.fold_right (Cond.UnknownApp.substs_of un) ~init:[] ~f:(fun (_kvid, vcond) uapp_conds ->
           let alpha_id = L.gen () in
           let () = assume_eqs := Cond.DSL.(var alpha_id == vcond) :: !assume_eqs in
           Cond.DSL.var alpha_id :: uapp_conds
@@ -96,7 +96,7 @@ module DetectNonRecursiveUnknown = struct
     let apply_to_cond ((orig_un, u_conds) : t) (cond : Cond.t) : Cond.t list =
       let orig_un_arg_vids = UnknownPredicate.var_set_of orig_un in
       match cond with
-      | Op2 (c1, Op.Impl, c2) when Option.map (uapp_of c2) ~f:(fun un -> UnknownPredicate.equal (Cond.UnknownApp.predicate_of un) orig_un ) |> Option.value ~default:false
+      | Op2 (_c1, Op.Impl, c2) when Option.map (uapp_of c2) ~f:(fun un -> UnknownPredicate.equal (Cond.UnknownApp.predicate_of un) orig_un ) |> Option.value ~default:false
         -> []
       | _ ->
         if has_specified_unknown cond orig_un then

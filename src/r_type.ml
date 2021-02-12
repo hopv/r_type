@@ -30,7 +30,7 @@ let work filename =
     }
   )
 
-  |> Res.and_then (fun { Loader.horn_clauses ; Loader.type_env } ->
+  |> Res.and_then (fun { Loader.horn_clauses ; Loader.type_env ; _ } ->
 
     if ! Conf.run_solver |> not then
       (fun () ->

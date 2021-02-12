@@ -1,4 +1,4 @@
-open Lib
+open! Lib
 
 (** A list of variable and type pairs. *)
 type args = (string * string) list
@@ -72,7 +72,7 @@ let rec fmt_body fmt: body -> unit = function
   Format.fprintf fmt "@ )@]"
 | Let ((id, expr) :: [], body) ->
   Format.fprintf fmt "let %s =@   @[<v>%a@]@ in@ %a" id fmt_body expr fmt_body body
-| Let (bindings, body) ->
+| Let (bindings, _body) ->
   Format.fprintf fmt "@[<v>let (@ " ;
   Core.List.fold_left bindings ~init:true ~f:(
     fun is_first (id, _) ->

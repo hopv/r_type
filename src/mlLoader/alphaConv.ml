@@ -6,12 +6,12 @@ module AssignMap = Map.Make(String)
 let (<*>) a1 a2 = List.zip_exn a1 a2
 
 class ['a] scope =
-  object (self)
+  object (_self)
     val mutable vmap = (AssignMap.empty : 'a AssignMap.t)
     method get = vmap
     method set nmap = vmap <- nmap
     method add vkey vid =
-      match AssignMap.add vmap vkey vid with
+      match AssignMap.add vmap ~key:vkey ~data:vid with
       | `Ok vmap' -> vmap <- vmap'
       | `Duplicate -> assert false
     method mem vkey = AssignMap.mem vmap vkey
@@ -61,7 +61,7 @@ let main (sprogram : SugarProgram.t) : SugarProgram.t =
       Mapper.funccall = (fun self (fid, exps) ->
         FuncCallExp (conv_vid fid, List.map exps ~f:(self.Mapper.exp self))
       );
-      Mapper.obj = (fun self (obj) ->
+      Mapper.obj = (fun _self (obj) ->
         if Objt.is_var obj
         then
           mk_var (conv_vid (Objt.vid_of_exn obj))

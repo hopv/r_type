@@ -1,0 +1,2 @@
+(ocamllex (modules smtLex))
+(menhir (modules smtParse))

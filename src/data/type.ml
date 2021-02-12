@@ -69,13 +69,13 @@ module RefType = struct
 
   let uapp_of (self : t) : Cond.UnknownApp.t option =
     match self with
-    | Int_ (v, cond) -> Cond.uapp_of cond
+    | Int_ (_v, cond) -> Cond.uapp_of cond
     | _ -> None
 
   let rec uapps_of (self : t) : Cond.UnknownApp.t list =
     match self with
-    | Int_ (v, cond) -> Cond.uapps_of cond
-    | Func (v, ty1, ty2) -> uapps_of ty1 @ uapps_of ty2
+    | Int_ (_v, cond) -> Cond.uapps_of cond
+    | Func (_v, ty1, ty2) -> uapps_of ty1 @ uapps_of ty2
     | _ -> failwith "unexpected"
 
   let name_of (self : t) =
@@ -85,13 +85,13 @@ module RefType = struct
     | _ -> failwith "unexpected"
 
   let arg = function
-  | Func (vid, t1, t2) -> t1
+  | Func (_vid, t1, _t2) -> t1
   | _ -> failwith "unexpected"
   let rtn = function
-  | Func (vid, t1, t2) -> t2
+  | Func (_vid, _t1, t2) -> t2
   | _ -> failwith "unexpected"
   let vid = function
-  | Func (vid, t1, t2) -> vid
+  | Func (vid, _t1, _t2) -> vid
   | _ -> failwith "unexpected"
 
   let rec argument_types (self : t) =
@@ -160,7 +160,7 @@ module RefType = struct
           Cond.T.(cond1 ==> Cond.subst cond2 w v)
       | (Func (v, t1, t2), Func (w, t1', t2')) ->
           Cond.T.(denote (subst t1' w v, t1) && (D.denote v t1' ==> denote (t2, subst t2' w v)))
-      | (e1, e2) -> failwith "illigal pattern"
+      | (_e1, _e2) -> failwith "illigal pattern"
   end
 
   module FromSimpleType = struct
@@ -263,8 +263,8 @@ module Extended = struct
   module And_Plus = struct
     let rec fold ~init ~impl t =
       let (%%) acc t' = fold t' ~init:acc ~impl in
-      let and_ v t1 t2 = init %% t1 %% t2 in
-      let impl v cond reftype = impl init cond reftype in
+      let and_ _v t1 t2 = init %% t1 %% t2 in
+      let impl _v cond reftype = impl init cond reftype in
       Variants.map t ~and_ ~impl
 
     let map_to_cond ~f t =
@@ -273,8 +273,8 @@ module Extended = struct
 
     let rec map ~f t =
       let dig t = map ~f t in
-      let and_ v t1 t2 = and_ (dig t1) (dig t2) in
-      let impl v cond reftype = f cond reftype in
+      let and_ _v t1 t2 = and_ (dig t1) (dig t2) in
+      let impl _v cond reftype = f cond reftype in
       Variants.map t ~and_ ~impl
   end
 

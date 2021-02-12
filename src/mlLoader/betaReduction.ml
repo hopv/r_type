@@ -30,8 +30,8 @@ let rec mapper_fn (env : Env.t) : Mapper.t =
       | None -> FuncCallExp (fid, exps)
       | Some x -> FuncCallExp (x, exps)
     );
-    Mapper.obj = (fun self objt ->
-      match (Objt.vid_of objt |> (fun x -> Option.bind x (Env.find env))) with
+    Mapper.obj = (fun _self objt ->
+      match (Objt.vid_of objt |> (fun x -> Option.bind x ~f:(Env.find env))) with
       | None -> ObjExp objt
       | Some x -> ObjExp (Objt.mk_var x)
     );
