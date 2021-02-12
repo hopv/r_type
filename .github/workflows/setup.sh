@@ -24,4 +24,4 @@ eval $(opam env)
 
 opam --version
 ocamlc --version
-omake --version
+dune --version

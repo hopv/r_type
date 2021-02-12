@@ -36,7 +36,7 @@ So, a complete setup to compile `r_type` looks like
 > opam install -y dune.2.8.1 menhir.20201216 core.v0.14.0 ppx_compare.v0.14.0 ppx_deriving.5.1 ppx_fields_conv.v0.14.1 ppx_hash.v0.14.0 ppx_sexp_conv.v0.14.1 ppx_variants_conv.v0.14.1 re2.v0.14.0
 ```
 
-Then, simply run `omake` at the root of this repository. The binary will be located at `src/r_type.opt` (`src/r_type` is a soft link to it).
+Then, simply run `dune build` at the root of this repository. The binary will be located at `src/r_type.exe`.
 
 This should work, but the most up to date build workflow is always the [travis build script][travis script].
 
