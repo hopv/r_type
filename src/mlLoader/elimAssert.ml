@@ -1,4 +1,4 @@
-open Core
+open! Core
 open SugarProgram
 
 

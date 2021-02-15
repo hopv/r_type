@@ -91,7 +91,7 @@ module Func = struct
   and args = Identity.t list
   [@@deriving sexp, eq, ord, hash]
 
-  let is_main (self : t) = self.name = "main"
+  let is_main (self : t) = Stdlib.(self.name = "main")
 
   let make ?annotation ~name ~args ~exp : t =
     let annotation = Option.value ~default:(Annotation.make ()) annotation in
@@ -99,7 +99,7 @@ module Func = struct
 
   include Formatable.Make(struct
     type nonrec t = t
-    let rec to_format { name; args; exp; annotation; } =
+    let to_format { name; args; exp; _ } =
       I.block [
         I.block [
           I.inline (List.map (I.joint (name :: args) " ") ~f:(fun tx -> I.text tx));
@@ -136,7 +136,9 @@ let type_env (Program fs) =
 let to_func_map (program : Typedef.t) : Func.t Identity.Map.t =
   let funcs = recfuns program in
   List.fold funcs ~init:Identity.Map.empty ~f:(fun mp func ->
-    Identity.Map.add mp ~key:func.Func.name ~data:func
+      match Identity.Map.add mp ~key:func.Func.name ~data:func with
+      | `Ok mp -> mp
+      | `Duplicate -> assert false
   )
 
 module Info = struct
@@ -152,7 +154,7 @@ module Info = struct
   end)
 
   let from_program program =
-    let from_recfun ({ Func.name ; Func.args } : Func.t) = (name, args) in
+    let from_recfun ({ Func.name ; Func.args ; _ } : Func.t) = (name, args) in
     match program with
   | Program (recfuns) -> List.map recfuns ~f:from_recfun
 
@@ -198,7 +200,7 @@ module SimpleTypeInfer = struct
       | Exp.Fail -> (tyenv, tyrel, Top) in
     let init_tyenv =
       List.fold fs ~init:Env.empty ~f:(
-        fun tyenv ({ Func.name; Func.args; Func.exp } : Func.t) ->
+        fun tyenv ({ Func.name; Func.args; _ } : Func.t) ->
         let arg_types = List.map args ~f:(fun aid -> gen_var ~suffix:("-fun-arg-" ^ name ^ "-" ^ aid) ()) in
         let rtn_type = gen_var ~suffix:("-fun-rtn-" ^ name) () in
         let fun_type = multiple_func arg_types rtn_type in
@@ -206,7 +208,7 @@ module SimpleTypeInfer = struct
       )
     in
     let infer_each_func (tyenv, tyrel) (
-      { Func.name ; Func.args ; Func.exp } : Func.t
+      { Func.name ; Func.args ; Func.exp ; _ } : Func.t
     ) =
       let arg_types = List.map args ~f:(fun aid -> Env.find_exn tyenv aid) in
       let (tyenv, tyrel, rtn_type) = infer tyenv tyrel exp in
@@ -215,10 +217,8 @@ module SimpleTypeInfer = struct
       (tyenv, tyrel) in
     let (tyenv, tyrel) = List.fold fs ~f:infer_each_func ~init:(init_tyenv, Relation.empty) in
     let tyenv = Relation.unify (tyenv (* |> Env.inspect *) ) (tyrel (* |> Relation.inspect *) ) in
-    let fids = List.map fs ~f:(fun ({ Func.name } : Func.t) -> name) in
-    Env.filteri tyenv ~f:(fun ~key ~data -> List.mem fids key ~equal:(
-      fun lhs rhs -> lhs = rhs)
-    )
+    let fids = List.map fs ~f:(fun ({ Func.name ; _ } : Func.t) -> name) in
+    Env.filteri tyenv ~f:(fun ~key ~data:_ -> List.mem fids key ~equal:Stdlib.(=))
 end
 
 let use_refinement_annotation = ref true

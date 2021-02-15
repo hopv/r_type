@@ -21,7 +21,7 @@ module Make = functor(M : Hashtbl.Key) -> struct
     match H.Table.add self.table ~key:qual ~data:self.length with
     | `Ok ->
       let new_els = qual :: self.els in
-      Fields.create new_els (Lazy.from_fun (fun () -> List.rev new_els)) self.table (self.length + 1)
+      Fields.create ~els:new_els ~rev:(Lazy.from_fun (fun () -> List.rev new_els)) ~table:self.table ~length:(self.length + 1)
     | _ -> self
 
   let mem (self : t) (el : M.t) : bool = H.Table.mem self.table el
@@ -30,7 +30,7 @@ module Make = functor(M : Hashtbl.Key) -> struct
 
   let create quals =
     let table = H.Table.create () in
-    let empty = Fields.create [] (Lazy.from_val []) table 0 in
+    let empty = Fields.create ~els:[] ~rev:(Lazy.from_val []) ~table ~length:0 in
     add_multi empty quals
 
   (* Return rev elements from (old.length)-th to (self.length - 1)-th. Assume old is subset of self *)

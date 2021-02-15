@@ -8,7 +8,7 @@ module Util = struct
     | [str] -> str
     | x :: xs -> x ^ sep ^ join sep xs
 
-  let rec join_with strs ~separator =
+  let join_with strs ~separator =
     join separator strs
 
   let insert_indent indent str =
@@ -18,7 +18,7 @@ module Util = struct
     let hd = spaces indent in
     String.split_lines str |> List.map ~f:(fun x -> hd ^ x) |> join_with ~separator:"\n"
 
-  let rec wrap str = "(" ^ str ^ ")"
+  let wrap str = "(" ^ str ^ ")"
 
   let some_break (self : 'a option) ~f : 'a =
     match self with
@@ -27,7 +27,7 @@ module Util = struct
 
   let shuffle (xs : 'a list) : 'a list =
     let ys = List.map xs ~f:(fun x -> (Random.float 1., x)) in
-    let ys' = List.sort ~compare:(fun (score, x) (score', y) -> Float.compare score score') ys in
+    let ys' = List.sort ~compare:(fun (score, _) (score', _) -> Float.compare score score') ys in
     List.map ys' ~f:(fun (_, x) -> x)
 
   let random (xs : 'a list) : ('a * 'a list) option =

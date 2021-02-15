@@ -11,32 +11,32 @@ It supports a subset of caml including higher-order functions, nested recursive 
 
 # Build
 
-Make sure you have [opam][opam] installed, ideally switched to the latest stable ocaml compiler (`4.05.0` at the time of writing). `r_type` requires the following opam libraries:
+Make sure you have [opam][opam] installed, ideally switched to the latest stable ocaml compiler (`4.11.1` at the time of writing). `r_type` requires the following opam libraries:
 
-- `omake.0.10.2` (build only)
-- `menhir`
-- `core`
-- `re2.v0.9.0`
-- `ppx_deriving.4.2`
-- `ppx_sexp_conv.v0.9.0`
-- `ppx_hash.v0.9.0`
-- `ppx_variants_conv.v0.9.0`
-- `ppx_fields_conv.v0.9.0`
-- `ppx_compare.v0.9.0`
-- `ppx_driver.v0.9.1`
+- `dune.2.8.1` (build only)
+- `menhir.20201216`
+- `core.v0.14.0`
+- `ppx_compare.v0.14.0`
+- `ppx_deriving.5.1`
+- `ppx_fields_conv.v0.14.1`
+- `ppx_hash.v0.14.0`
+- `ppx_sexp_conv.v0.14.1`
+- `ppx_variants_conv.v0.14.1`
+- `re2.v0.14.0`
+
 
 So, a complete setup to compile `r_type` looks like
 
 ```bash
 > opam update && opam upgrade
-  # Switch to 4.05.0...
-> opam switch 4.05.0
+  # Switch to 4.11.1...
+> opam switch 4.11.1
 > eval `opam config env`
   # Install relevant packages...
-> opam install -y omake.0.10.2 menhir core re2.v0.9.0 ppx_deriving.4.2 ppx_sexp_conv.v0.9.0 ppx_hash.v0.9.0 ppx_variants_conv.v0.9.0 ppx_fields_conv.v0.9.0 ppx_compare.v0.9.0 ppx_driver.v0.9.1
+> opam install -y dune.2.8.1 menhir.20201216 core.v0.14.0 ppx_compare.v0.14.0 ppx_deriving.5.1 ppx_fields_conv.v0.14.1 ppx_hash.v0.14.0 ppx_sexp_conv.v0.14.1 ppx_variants_conv.v0.14.1 re2.v0.14.0
 ```
 
-Then, simply run `omake` at the root of this repository. The binary will be located at `src/r_type.opt` (`src/r_type` is a soft link to it).
+Then, simply run `dune build` at the root of this repository. The binary will be located at `src/r_type.exe`.
 
 This should work, but the most up to date build workflow is always the [travis build script][travis script].
 

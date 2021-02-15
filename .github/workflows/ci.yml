@@ -2,7 +2,7 @@
 
 name: CI
 
-# Controls when the action will run. 
+# Controls when the action will run.
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
   push:
@@ -37,4 +37,4 @@ jobs:
         run: ./.github/workflows/setup.sh
 
       - name: Compile
-        run: eval $(opam env) && omake
+        run: eval $(opam env) && dune build

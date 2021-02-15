@@ -5,11 +5,11 @@ module Verification = struct
 
   let rec disallow_without_simple_exp (exp : Expr.t) =
     match exp with
-    | ObjExp obj -> ()
-    | SingleOpExp (op, e) -> disallow_without_simple_exp e
+    | ObjExp _obj -> ()
+    | SingleOpExp (_op, e) -> disallow_without_simple_exp e
     | AssertExp e -> disallow_without_simple_exp  e
-    | FuncCallExp (fid, es) -> List.iter es ~f:disallow_without_simple_exp
-    | OpExp (e1, op, e2) -> let () = disallow_without_simple_exp  e1 in disallow_without_simple_exp  e2
+    | FuncCallExp (_fid, es) -> List.iter es ~f:disallow_without_simple_exp
+    | OpExp (e1, _op, e2) -> let () = disallow_without_simple_exp  e1 in disallow_without_simple_exp  e2
     | _ -> failwith ("not simple expression: " ^ Expr.to_string exp)
 end
 

@@ -24,7 +24,6 @@ let verb = ref false
 (** CLAP stuff. *)
 module Clap = struct
 
-  open Format
   open Core
   open Lib
 
@@ -125,7 +124,7 @@ module Clap = struct
   let try_clap = function
   | Res.Ok res -> res
   | Res.Err (arg, msg) -> (
-    print_help () ; 
+    print_help () ;
     Format.printf "@.\
       Error during command-line argument parsing on '%s':@.  %s\
     " arg msg ;
@@ -136,7 +135,7 @@ module Clap = struct
     let first_is (expected: string) ((got, _): string * 'a): bool = String.equal expected got in
 
     let rec loop = function
-        | "-h" :: tail | "--help" :: tail -> (
+        | "-h" :: _tail | "--help" :: _tail -> (
           print_help () ;
           exit 0
         )
@@ -155,7 +154,7 @@ module Clap = struct
             )
             | None -> (
                 match List.find u_args ~f:(fun (opt, _, _, _, _) -> String.equal opt arg) with
-                | Some (opt, _, _, _, action) -> (
+                | Some (_opt, _, _, _, action) -> (
                     let res =
                       action value |> parse_res_chain (
                         sprintf "on option '%s'" arg

@@ -21,29 +21,29 @@ let rec sort blk =
     in List.fold_left blks ~f:loop ~init:([], []) |> sort_queue |> List.rev
   in match blk with
     | Inline blks ->
-        let blks' = List.map blks sort in
-        if List.for_all blks' is_inline
+        let blks' = List.map blks ~f:sort in
+        if List.for_all blks' ~f:is_inline
         then Inline blks'
         else Indent (mk_group blks')
     | Block blks -> Block (mk_group blks)
     | Indent blks -> Indent (mk_group blks)
     | _ -> blk
 
-let rec to_string blk =
+let to_string blk =
   let rec to_string' indent blk =
     let join ls = List.fold_left ls ~init:"" ~f:(fun sum l -> sum ^ l) in
     match blk with
       | Text str -> str
       | Inline blks ->
-          List.map blks (to_string' indent) |> join
+          List.map blks ~f:(to_string' indent) |> join
       | Block blks ->
-          if List.for_all blks is_inline
-          then Util.insert_indent indent (List.map blks (to_string' indent) |> join) ^ "\n"
-          else List.map blks (to_string' indent) |> join
+          if List.for_all blks ~f:is_inline
+          then Util.insert_indent indent (List.map blks ~f:(to_string' indent) |> join) ^ "\n"
+          else List.map blks ~f:(to_string' indent) |> join
       | Indent blks ->
-          if List.for_all blks is_inline
-          then Util.insert_indent (indent + 1) (List.map blks (to_string' (indent + 1)) |> join) ^ "\n"
-          else List.map blks (to_string' (indent + 1)) |> join
+          if List.for_all blks ~f:is_inline
+          then Util.insert_indent (indent + 1) (List.map blks ~f:(to_string' (indent + 1)) |> join) ^ "\n"
+          else List.map blks ~f:(to_string' (indent + 1)) |> join
   in to_string' 0 blk
 
 let indent blk = Indent [blk]

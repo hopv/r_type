@@ -8,7 +8,7 @@ module Context = struct
 
   let insert_let (exp : Expr.t) (context : Expr.t t) : Expr.t =
     match exp with
-    | ObjExp objt -> context exp
+    | ObjExp _objt -> context exp
     | _ ->
       let vid = V.gen () in
       let obj_exp = ObjExp (Objt.mk_var vid) in

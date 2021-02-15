@@ -94,7 +94,7 @@ module Expr = struct
             I.text ")"
           ]
       | FuncCallExp (fid, exps) ->
-          let args = List.map exps (fun exp -> to_format exp) in
+          let args = List.map exps ~f:(fun exp -> to_format exp) in
           I.inline [
             I.text "(";
             I.text fid;
@@ -135,7 +135,7 @@ include Formatable.Make(struct
   module I = Formatable
   type nonrec t = t
   let to_format (items : t) =
-    let rec from_recfun item =
+    let from_recfun item =
       match item with
       | Eval exp -> Expr.to_format exp
       | BindValue (name, exp) -> I.block [
@@ -144,7 +144,7 @@ include Formatable.Make(struct
           ];
           I.indent (Expr.to_format exp)
         ]
-      | BindFunc { name; args; exp } -> I.block [
+      | BindFunc { name; args; exp; _ } -> I.block [
           I.block [
             I.inline (List.map (I.joint (name :: args) " ") ~f:(fun tx -> I.text tx));
             I.text " ="
@@ -158,7 +158,7 @@ include Formatable.Make(struct
     ]
 end)
 
-let to_pfun { name; args; exp = exp_; annotation; } ~exp =
+let to_pfun { name; args; exp = _exp; annotation; } ~exp =
   Program.Func.Fields.create ~name ~args ~exp ~annotation
 
 let recfuns_of (items : t) : Func.t list = List.map items ~f:(function BindFunc f -> Some f | _ -> None) |> List.filter_opt
@@ -191,8 +191,8 @@ let rec free_var_set_of (self : exp) : Identity.Set.t =
   | AssertExp e1 -> free_var_set_of e1
   | FuncCallExp (fid, es) -> Identity.Set.add (List.map es ~f:free_var_set_of |> Identity.Set.union_list) fid
   | AbsExp (ids, e) -> Identity.Set.diff (free_var_set_of e) (Identity.Set.of_list ids)
-  | OpExp (e1, op, e2) -> Identity.Set.union (free_var_set_of e1) (free_var_set_of e2)
-  | SingleOpExp (op, e) -> free_var_set_of e
+  | OpExp (e1, _op, e2) -> Identity.Set.union (free_var_set_of e1) (free_var_set_of e2)
+  | SingleOpExp (_op, e) -> free_var_set_of e
   | ObjExp obj -> Objt.vids_of obj |> Identity.Set.of_list
 
 module Mapper = struct

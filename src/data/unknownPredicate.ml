@@ -38,8 +38,6 @@ let var_set_of self = self.var_set
     Option.value (Subst.find self.var_subst v) ~default:v
     ) *)
 
-let id_of (self : t) = self.id
-
 let sort_vars = List.sort ~compare:(Identity.compare)
 
 (* let get_obj_substs (self : t) =

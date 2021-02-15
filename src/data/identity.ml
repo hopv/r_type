@@ -1,7 +1,10 @@
 open Core
 
 include Mappable.Make (
-    struct include String let show = ident end
+    struct
+      include String
+      let show = ident [@@ocaml.warning "-32"]
+    end
 )
 
 module Short = struct
@@ -9,4 +12,3 @@ module Short = struct
   let show vid =
     Label.shorten vid |> Result.ok |> Option.value ~default:vid
 end
-

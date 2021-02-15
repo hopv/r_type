@@ -1,5 +1,5 @@
 %{
-  open ParseBase
+  open! ParseBase
 %}
 
 %token <string> OP
