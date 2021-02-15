@@ -31,7 +31,7 @@ include Formatable.Make(Typedef)
 type typing = IntType | BoolType
 
 let return_vid = "#return"
-let return_vid_of fid = return_vid (* ("#return-" ^ fid) *)
+let return_vid_of _fid = return_vid (* ("#return-" ^ fid) *)
 let return_vid_main = return_vid (* "#main-return" *)
 
 let wrap_to_string vid = Label.strip_wrapper vid
@@ -99,8 +99,8 @@ let vid_of_exn = function
 
 let does_match_vid obj k =
   match obj with
-  | VarObj vid -> if vid = k then true else false
-  | SpecialVar vid -> if vid = k then true else false
+  | VarObj vid -> String.equal vid k
+  | SpecialVar vid -> String.equal vid k
   | _ -> false
 
 let subst obj (k, v) =
@@ -119,7 +119,7 @@ let string_of_typing = function
 
 let type_of _ = IntType
 
-let is_int = function IntObj i -> true | _ -> false
+let is_int = function IntObj _i -> true | _ -> false
 
 (* let vid_set vid_list = List.sort_uniq String.compare vid_list *)
 

@@ -3,17 +3,17 @@ open Core
 
 module Subst = struct
   type t = (Identity.t * Identity.t) list
-  [@@deriving compare, eq, sexp, ord, hash]
+  [@@deriving eq, sexp, ord, hash]
 
   let empty = []
-  let add self (k, v) : t =
-    if List.Assoc.mem self ~equal:(=) k then self
-    else if k = v then self
+  let add (self:t) ((k:Identity.t), (v:Identity.t)) : t =
+    if List.Assoc.mem self ~equal:Stdlib.(=) k then self
+    else if Stdlib.(k = v) then self
     else (k, v) :: self
 
   let subst self orig_id new_id : t =
-    List.map self ~f:(fun (k, v) -> (k, if v = orig_id then new_id else v)) |>
-    List.filter ~f:(fun (k, v) -> k <> v)
+    List.map self ~f:(fun (k, v) -> (k, if Stdlib.(v = orig_id) then new_id else v)) |>
+    List.filter ~f:(fun (k, v) -> Stdlib.(k <> v))
 
   module T = struct
     let (@<<) mp (k, v) = (k, v) :: mp
@@ -64,9 +64,9 @@ module Operation = struct
   let false_ = Value Objt.false_
   let and_ x y = op2 x Op.And_ y
   let and_s x y =
-    if x = Value (Objt.true_) then
+    if Stdlib.(x = Value Objt.true_) then
       y
-    else if y = Value (Objt.true_) then
+    else if Stdlib.(y = Value Objt.true_) then
       x
     else
       and_ x y
@@ -149,7 +149,6 @@ include T
 
   module Operator = struct
     let is_right_connective (op : Op.t) : bool =
-      let open Op in
       match op with
       | Plus -> true
       | Times -> true
@@ -159,7 +158,6 @@ include T
       | _ -> false
 
     let is_left_connective (op : Op.t) : bool =
-      let open Op in
       match op with
       | Plus -> true
       | Minus -> true
@@ -202,7 +200,7 @@ include T
           | (hds, [tl]) ->
             begin match tl with
               | V_Op2 (op', cs') when Op.equal op' op -> V_Op2 (op, hds @ cs')
-              | x -> V_Op2 (op, cs)
+              | _ -> V_Op2 (op, cs)
             end
           | _ -> V_Op2 (op, cs)
         end
@@ -305,6 +303,7 @@ include Formatable.Make(struct
   module I = Formatable
 
   type nonrec t = t
+
   let rec to_format term =
     Visualized.to_format (Visualized.of_cond term)
     (* match term with
@@ -329,6 +328,7 @@ include Formatable.Make(struct
     | UApp un ->
         I.noline (UApp.to_string un);
     *)
+    [@@ocaml.warning "-39"]
 end)
 
 
@@ -358,9 +358,9 @@ module UnknownApp = struct
 
   let substs_of ((un, cs) : t) : (Identity.t * Typedef.t) list =
     let vids = UnknownPredicate.vids_of un in
-    Option.value_exn (List.zip vids cs)
+    List.zip_exn vids cs
 
-  let predicate_of ((un, cs) : t) : UnknownPredicate.t = un
+  let predicate_of ((un, _cs) : t) : UnknownPredicate.t = un
   let predicate_vids_of (self : t) : Identity.t list = UnknownPredicate.vids_of (predicate_of self)
 
   let conds_map ~f ((un, cs) : t) : t = (un, List.map cs ~f)
@@ -412,14 +412,14 @@ module Simplifier = struct
       | Op2 (Value v1, Op.Eq, Value v2) when Objt.is_var v1 && Objt.is_var v2 ->
         let vid1 = Objt.vid_of_exn v1 in
         let vid2 = Objt.vid_of_exn v2 in
-        if vid1 = vid2 then Value Objt.true_ else cond
+        if Stdlib.(vid1 = vid2) then Value Objt.true_ else cond
       | Op2 (c1, op, c2) ->
         Op2 (simplify c1, op, simplify c2)
       | x -> x
   end
 
   module Bool = struct
-    let rec get_bool term =
+    let get_bool term =
       match term with
       | Value obj -> Objt.get_bool obj
       | _ -> None
@@ -460,7 +460,7 @@ module Simplifier = struct
   end
 
   module Num = struct
-    let rec get_int term =
+    let get_int term =
       match term with
       | Value obj -> Objt.get_int obj
       | _ -> None
@@ -506,7 +506,6 @@ module Simplifier = struct
 
   module Ice = struct
     let rec sort term =
-      let open Op in
       match term with
       | Op2 (
           Op2 (Value (Objt.IntObj c1), Op.Times, t1), Op.Plus,
@@ -537,7 +536,6 @@ module Simplifier = struct
       | _ -> term
 
     let rec simplify term =
-      let open Op in
       match term with
       | Op1 (op, t1) ->
           let t1 = simplify t1 in
@@ -602,8 +600,8 @@ module Destruction = struct
 
   let rec uapps_of = function
     | UApp (un, cs) -> [(un, cs)]
-    | Op1 (op, t) -> uapps_of t
-    | Op2 (t1, op, t2) -> uapps_of t1 @ uapps_of t2
+    | Op1 (_op, t) -> uapps_of t
+    | Op2 (t1, _op, t2) -> uapps_of t1 @ uapps_of t2
     | _ -> []
 
   let uapp_of (self : t) : UnknownApp.t option =
@@ -635,8 +633,8 @@ let rec has cond target =
   then true
   else
     match cond with
-    | Op1 (op, t) -> has t target
-    | Op2 (t1, op, t2) -> has t1 target || has t2 target
+    | Op1 (_op, t) -> has t target
+    | Op2 (t1, _op, t2) -> has t1 target || has t2 target
     | _ -> false
 
 module Variants = struct
@@ -659,7 +657,7 @@ let rec get_vids cond =
   let value _ obj = Objt.get_vids obj in
   let op1 _ _ t = get_vids t in
   let op2 _ t1 _ t2 = get_vids t1 @ get_vids t2 in
-  let uapp _ _ y = List.map y get_vids |> List.concat in
+  let uapp _ _ y = List.map y ~f:get_vids |> List.concat in
   Variants.map cond ~value ~op1 ~op2 ~uapp
 
 let vids_of cond = get_vids cond
@@ -755,7 +753,6 @@ module Horn = struct
         match cond with
         | Op2 (t1, Op.Impl, t2) ->
             g t1 @ g t2
-        | Op2 (t1, op, t2) -> [f cond]
         | _ -> [f cond]
       in g cond
 
@@ -784,7 +781,7 @@ module SimpleTypeInfer = struct
     let rec (infer : SimpleType.Relation.t -> t -> SimpleType.Relation.t * SimpleType.t) =
       fun tyrel cond ->
       match cond with
-      | Value v when is_var cond ->
+      | Value _v when is_var cond ->
           let vid = vid_exn cond in
           let rtn_ty = SimpleType.gen_var () in
           let tyrel = SimpleType.Relation.T.(tyrel %<< (SimpleType.Env.find_exn tyenv vid == rtn_ty)) in
@@ -815,14 +812,14 @@ module SimpleTypeInfer = struct
 
   let get_type self tyenv : SimpleType.t =
     match self with
-    | Value v when is_var self ->
+    | Value _v when is_var self ->
         let vid = vid_exn self in
         SimpleType.Env.find_exn tyenv vid
     | Value v ->
         if Objt.is_int v then SimpleType.int_ else SimpleType.bool_
-    | Op2 (t1, op, t2) ->
+    | Op2 (_t1, op, _t2) ->
         if Op.is_value_bool op then SimpleType.bool_ else SimpleType.int_
-    | Op1 (op, t1) ->
+    | Op1 (op, _t1) ->
         if Op.is_value_bool op then SimpleType.bool_ else SimpleType.int_
     | UApp _ ->
         SimpleType.bool_
@@ -852,7 +849,7 @@ module ElimFreeVar = struct
   let rec run cond ~bind_vars =
     let rec gather_equalities cond : Equality.t =
       match cond with
-      | Op1 (op, c1) -> [] (* gather_equalities c1 *)
+      | Op1 (_op, _c1) -> [] (* gather_equalities c1 *)
       | Op2 (Value v1, Op.Eq, Value v2) when Objt.is_var v1 && Objt.is_var v2 ->
         let vid1 = Objt.vid_of_exn v1 in
         let vid2 = Objt.vid_of_exn v2 in
@@ -917,13 +914,13 @@ module Boolnize = struct
           then cond
           else cond
       | Op1 (op, c1) when Op.is_quantifier op -> Op1 (op, intnize c1)
-      | Op1 (op, c1) when Op.is_value_bool op -> btoi (boolnize cond)
+      | Op1 (op, _c1) when Op.is_value_bool op -> btoi (boolnize cond)
       | Op1 (op, c1) ->
           if Op.is_arg_bool op
           then Op1 (op, boolnize c1)
           else Op1 (op, intnize c1)
-      | Op2 (c1, Op.Eq, c2) -> btoi (boolnize cond)
-      | Op2 (c1, op, c2) when Op.is_value_bool op -> btoi (boolnize cond)
+      | Op2 (_c1, Op.Eq, _c2) -> btoi (boolnize cond)
+      | Op2 (_c1, op, _c2) when Op.is_value_bool op -> btoi (boolnize cond)
       | Op2 (c1, op, c2) ->
           if Op.is_arg_bool op
           then Op2 (boolnize c1, op, boolnize c2)
@@ -958,7 +955,7 @@ module Eval = struct
         let term = Op2 (t1, op, t2) in
         if Op.is_arg_bool op
         then
-          Option.map ((t1 |> to_bool, t2 |> to_bool) |> tp) (fun (t1, t2) ->
+          Option.map ((t1 |> to_bool, t2 |> to_bool) |> tp) ~f:(fun (t1, t2) ->
             match op with
             | Op.And_ -> T.bool_ (t1 && t2)
             | Op.Or_ ->  T.bool_ (t1 || t2)
@@ -967,7 +964,7 @@ module Eval = struct
             | _ -> term
           ) |> Option.value ~default:term
         else
-          Option.map ((t1 |> to_int, t2 |> to_int) |> tp) (fun (t1, t2) ->
+          Option.map ((t1 |> to_int, t2 |> to_int) |> tp) ~f:(fun (t1, t2) ->
             match op with
             | Op.Eq ->   T.bool_ (t1 = t2)
             | Op.Neq ->  T.bool_ (t1 <> t2)
@@ -1023,7 +1020,7 @@ end
 let rec get_apps t =
   match t with
   | UApp(p, _) -> [p]
-  | Value v -> []
+  | Value _v -> []
   | Op1(_, t) -> get_apps t
   | Op2(t1, _, t2) -> get_apps t1 @ get_apps t2
 
@@ -1032,7 +1029,7 @@ let get_pids t = List.map ~f:UnknownPredicate.id_of @@ get_apps t
 
 let rec get_fv t =
   match t with
-  | UApp(p, ts) -> List.concat @@ List.map ~f:get_fv ts
+  | UApp(_p, ts) -> List.concat @@ List.map ~f:get_fv ts
   | Value v -> Objt.get_fv v
   | Op1(_, t) -> get_fv t
   | Op2(t1, _, t2) -> get_fv t1 @ get_fv t2
@@ -1063,7 +1060,7 @@ let ands ts =
   | [] -> DSL.true_
   | t::ts' -> List.fold_left ~f:and_s ~init:t ts'
 
-let rec decomp_hc ?(full=false) t =
+let decomp_hc ?(full=false) t =
   match t with
   | Op2(t1, Op.Impl, t2) ->
       let ts =
@@ -1077,7 +1074,7 @@ let rec decomp_hc ?(full=false) t =
 let compose_hc ts t =
   Op2(ands ts, Op.Impl, t)
 
-let rec alpha_rename (t : t) =
+let alpha_rename (t : t) =
   let ts,t2 = decomp_hc t in
   match t2 with
   | Value _ -> t
@@ -1086,7 +1083,7 @@ let rec alpha_rename (t : t) =
       let ts2',map =
         let aux t =
           match t with
-          | Value (Objt.VarObj x) when 1 = List.length (List.filter ~f:((=) x) fv) ->
+          | Value (Objt.VarObj x) when 1 = List.length (List.filter ~f:(Stdlib.(=) x) fv) ->
               t, None
           | t ->
               let y = AlphaConv.L.gen() in
@@ -1138,7 +1135,7 @@ module ToSmt2 = struct
 
   let rec term_fmt fmt (term: t) = match term with
   | Value (Objt.VarObj vid) -> Format.fprintf fmt "|%s|" vid
-  | Value (Objt.SpecialVar vid) -> failwith "special var are not supported"
+  | Value (Objt.SpecialVar _vid) -> failwith "special var are not supported"
   | Value (Objt.IntObj i) -> (
     if i >= 0 then Format.fprintf fmt "%d" i
     else Format.fprintf fmt "(- %d)" (-i)
@@ -1147,21 +1144,21 @@ module ToSmt2 = struct
   | Value (Objt.Array _) -> failwith "arrays are not supported"
   | UApp (un, terms) -> (
     Format.fprintf fmt "(|%s|" (Identity.Short.show un.UnknownPredicate.id) ;
-    List.iter terms (Format.fprintf fmt " %a" term_fmt) ;
+    List.iter terms ~f:(Format.fprintf fmt " %a" term_fmt) ;
     Format.fprintf fmt ")"
   )
   | Op1 (op, term) -> (
     let ops = Op.ToSmt2.op_strings op in
-    List.iter ops (Format.fprintf fmt "(%s ") ;
+    List.iter ops ~f:(Format.fprintf fmt "(%s ") ;
     Format.fprintf fmt "%a" term_fmt term ;
-    List.iter ops (fun _ -> Format.fprintf fmt ")") ;
+    List.iter ops ~f:(fun _ -> Format.fprintf fmt ")") ;
   )
   | Op2 (lft, op, rgt) -> (
     let ops = Op.ToSmt2.op_strings op in
-    List.iter ops (Format.fprintf fmt "(%s") ;
+    List.iter ops ~f:(Format.fprintf fmt "(%s") ;
     Format.fprintf fmt " %a" term_fmt lft ;
     Format.fprintf fmt " %a" term_fmt rgt ;
-    List.iter ops (fun _ -> Format.fprintf fmt ")") ;
+    List.iter ops ~f:(fun _ -> Format.fprintf fmt ")") ;
   )
 
 
@@ -1176,7 +1173,7 @@ module ToSmt2 = struct
     (* failwith "can't merge int and bool types" *)
     Int
   | _ -> (
-    assert (t1 = t2) ;
+    assert Stdlib.(t1 = t2) ;
     t1
   )
 
@@ -1211,15 +1208,15 @@ module ToSmt2 = struct
 
   let typ_of_term (vars: (Objt.id * typ) list) term = match term with
   | Value (Objt.VarObj vid) -> (
-    match List.find vars (fun (v, t) -> v = vid) with
+    match List.find vars ~f:(fun (v, _t) -> Stdlib.(v = vid)) with
     | Some (_, t) -> t
     | None -> Unk
   )
-  | Value (Objt.SpecialVar vid) -> failwith "special var are not supported"
-  | Value (Objt.IntObj i) -> Int
-  | Value (Objt.BoolObj b) -> Bool
+  | Value (Objt.SpecialVar _vid) -> failwith "special var are not supported"
+  | Value (Objt.IntObj _i) -> Int
+  | Value (Objt.BoolObj _b) -> Bool
   | Value (Objt.Array _) -> failwith "arrays are not supported"
-  | UApp (un, terms) -> Bool
+  | UApp (_un, _terms) -> Bool
   | Op1 (op, _) -> typ_of_op op
   | Op2 (_, op, _) -> typ_of_op op
 
@@ -1238,7 +1235,7 @@ module ToSmt2 = struct
     (* Format.printf "var %s@." vid ; *)
     let (vars, added) = List.fold_left vars ~init:([], false) ~f:(
       fun (vars, added) (var, typ') ->
-        if not added && var = vid then
+        if not added && Stdlib.(var = vid) then
           (var, merge_types typ typ') :: vars, true
         else (var, typ') :: vars, added
     ) in
@@ -1248,7 +1245,7 @@ module ToSmt2 = struct
   | Value (Objt.Array _) -> failwith "arrays are not supported..."
   | UApp (un, terms) -> (
     let preds = if List.mem ~equal:(
-      fun p p' -> p.UnknownPredicate.id = p'.UnknownPredicate.id
+      fun p p' -> Stdlib.(p.UnknownPredicate.id = p'.UnknownPredicate.id)
     ) preds un then preds else un :: preds in
     List.fold_left terms ~init:(vars, preds) ~f:(
       fun (vars, preds) (term: t) ->
@@ -1256,7 +1253,7 @@ module ToSmt2 = struct
     )
   )
   | Op1 (op, term) -> (
-    assert (typ = typ_of_op op) ;
+    assert Stdlib.(typ = typ_of_op op) ;
     collect ~debug:debug ~typ:(typ_of_op_args op) vars preds term
   )
   | Op2 (lft, op, rgt) -> (
@@ -1284,7 +1281,7 @@ module ToSmt2 = struct
     (* Format.printf "splitting %a@.@." term_fmt term ; *)
     let rec loop acc = function
       | Op2 (lft, Op.Impl, rgt) -> loop (acc @ (conjuncts_of lft)) rgt
-      | term -> acc, List.map (conjuncts_of term) (
+      | term -> acc, List.map (conjuncts_of term) ~f:(
         function
         | Value (Objt.BoolObj false) -> None
         | rgt -> Some rgt
@@ -1293,24 +1290,24 @@ module ToSmt2 = struct
     loop [] term
 
 
-  let clauses_to_smt2 fmt verbose ml_file clauses =
+  let clauses_to_smt2 fmt verbose _ml_file clauses =
 
     Format.fprintf fmt "(set-logic HORN)@.@." ;
 
     (* Format.fprintf fmt "collecting predicates...@." ; *)
 
-    let clauses = List.map clauses Boolnize.main in
+    let clauses = List.map clauses ~f:Boolnize.main in
 
     let _, preds = List.fold_left clauses ~init:([],[]) ~f:(
       fun (_, preds) clause ->
         collect ~debug:verbose [] preds clause
     ) in
 
-    List.iter preds (
+    List.iter preds ~f:(
       fun pred ->
         Format.fprintf fmt "(declare-fun |%s|@.  ("
           (Identity.Short.show pred.UnknownPredicate.id) ;
-        List.iter pred.UnknownPredicate.vars (
+        List.iter pred.UnknownPredicate.vars ~f:(
           fun _ -> Format.fprintf fmt " Int"
         ) ;
         Format.fprintf fmt " ) Bool@.)@.@."
@@ -1318,7 +1315,7 @@ module ToSmt2 = struct
 
     (* Format.fprintf fmt "collecting variables...@." ; *)
 
-    List.iter clauses (
+    List.iter clauses ~f:(
       fun clause ->
         let vars = SimpleType.Env.to_alist @@ SimpleTypeInfer.main clause in
         let lhs, rhs = split_clause clause in
@@ -1345,10 +1342,10 @@ module ToSmt2 = struct
           )
         in
         let split = loop [] [] lhs rhs in
-        List.iter split (fun (lhs, rhs) ->
-          List.iter rhs (
+        List.iter split ~f:(fun (lhs, rhs) ->
+          List.iter rhs ~f:(
             fun rhs ->
-              let positive = rhs <> None in
+              let positive = Stdlib.(rhs <> None) in
               Format.fprintf fmt "(assert@.  (" ;
               ( if positive then
                   Format.fprintf fmt "forall ("
@@ -1357,7 +1354,7 @@ module ToSmt2 = struct
               ) ;
               ( match vars with
                 | [] -> Format.fprintf fmt " (unused Int)"
-                | _ -> List.iter vars (
+                | _ -> List.iter vars ~f:(
                   fun (v, t) ->
                     try Format.fprintf fmt " (|%s| %s)" v (
                       str_of_typ @@ typ_of_simpleType t
@@ -1372,11 +1369,11 @@ module ToSmt2 = struct
               ( if positive then
                   Format.fprintf fmt "(=>@.      "
               ) ;
-              ( if lhs = [] then (
+              ( if Stdlib.(lhs = []) then (
                   Format.fprintf fmt "true@."
                 ) else (
                   Format.fprintf fmt "( and" ;
-                  List.iter lhs (Format.fprintf fmt " %a" term_fmt) ;
+                  List.iter lhs ~f:(Format.fprintf fmt " %a" term_fmt) ;
                   Format.fprintf fmt " )@."
                 )
               ) ;

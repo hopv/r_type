@@ -47,7 +47,7 @@ module P = struct
   let p_value_binding (self : t) ({ pvb_pat = pat; pvb_expr = expr; pvb_attributes = _attrs; pvb_loc = _loc } : value_binding) =
     let sp_expr = self.expr self expr in self.bind_pattern self sp_expr pat
 
-  let p_expr (self : t) ({pexp_loc = loc; pexp_desc = desc; pexp_attributes = _attrs}: expression) : Expr.t =
+  let p_expr (self : t) ({pexp_loc = _loc; pexp_desc = desc; pexp_attributes = _attrs; _}: expression) : Expr.t =
     match desc with
     | Pexp_fun (alabel, defe, fun_pat, fun_expr) ->
       let () =
@@ -84,7 +84,7 @@ module P = struct
     | Pexp_construct (loct, exp) -> self.construct self (loct, exp)
     | _ -> failwith "unsupported expr"
 
-  let p_construct (self : t) ({ txt = ident; loc = loc; }, exp) : Expr.t =
+  let p_construct (_self : t) ({ txt = ident; loc = _loc; }, exp) : Expr.t =
     match (Longident.last ident, exp) with
     | ("()", None) -> mk_true
     | ("false", None) -> mk_false
@@ -102,21 +102,21 @@ module P = struct
         | (Some (Op.Minus as op), [t1]) -> SingleOpExp (op, t1)
         | (Some (Op.Not_ as op), [t1]) -> SingleOpExp (op, t1)
         | (Some op, [t1; t2]) -> OpExp (t1, op, t2)
-        | (Some op, _) -> failwith "unsupported operator"
+        | (Some _op, _) -> failwith "unsupported operator"
         | (_, _) -> FuncCallExp (vid, arg_exprs)
       end
     | _ ->
       let vid = L.gen () in
       LetExp (vid, sp_expr, FuncCallExp (vid, arg_exprs))
 
-  let p_constant (self : t) (const : constant) : Objt.t =
+  let p_constant (_self : t) (const : constant) : Objt.t =
     match const with
     | Pconst_integer (int_str, _suffix) -> Objt.intobj (Int.of_string int_str)
     | Pconst_char c -> Objt.varobj (String.of_char c)
-    | Pconst_string (str, _) -> Objt.varobj str
+    | Pconst_string (str, _, _) -> Objt.varobj str
     | _ -> failwith "unsupported constant"
 
-  let p_bind_pattern (self : t) (e : Expr.t) ({ ppat_desc = pat; ppat_loc = loc; ppat_attributes = _attrs } : pattern) : (Identity.t * Expr.t) list =
+  let p_bind_pattern (self : t) (e : Expr.t) ({ ppat_desc = pat; ppat_loc = _loc; ppat_attributes = _attrs; _ } : pattern) : (Identity.t * Expr.t) list =
     match pat with
     | Ppat_any -> [(L.gen (), e)]
     | Ppat_var ({ txt = vid; loc = _loc; }) -> [(vid, e)]
@@ -138,7 +138,7 @@ module P = struct
 end
 
 let parse filename : SugarProgram.t =
-  let structure = Pparse.parse_implementation ~tool_name:"fpice" Format.std_formatter filename in
+  let structure = Pparse.parse_implementation ~tool_name:"fpice" filename in
   P.convert P.converter structure
 
 let desugar (sprogram : SugarProgram.t) : Program.t = Desugar.main sprogram

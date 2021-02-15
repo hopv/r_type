@@ -58,12 +58,15 @@ module Env = struct
   type t = Element.t Identity.Map.t
 
   let empty = Identity.Map.empty
-  let add (self : t) ~key ~data = Identity.Map.add self ~key ~data
+  let add (self : t) ~key ~data =
+    match Identity.Map.add self ~key ~data with
+    | `Ok self -> self
+    | `Duplicate -> assert false
   let add_closure self ~key ~data = add self ~key ~data:(data)
   let add_global_function self ~key ~data = add self ~key ~data:(data, [])
 
   let global_function_key_set_of (self : t) =
-    Identity.Map.filteri self ~f:(fun ~key ~data ->
+    Identity.Map.filteri self ~f:(fun ~key:_ ~data ->
       match data with
       | (_, []) -> true
       | _ -> false
@@ -94,12 +97,12 @@ let main (sprogram : t) : t =
           mapping_expr (mapper_fn (Env.add_closure env ~key:vid ~data:closure) (vid :: vars_rev)) exp2
         | x -> LetExp (vid, x, mapping_expr (mapper_fn env (vid :: vars_rev)) exp2)
       );
-      Mapper.letrec_ = (fun self (bindings, exp2) ->
+      Mapper.letrec_ = (fun _self (bindings, exp2) ->
         let env_keys = Env.key_set_of env in
         let letrec_bound_names = List.map bindings ~f:Tuple2.get1 in
         let letrec_bound_name_set = Identity.Set.of_list letrec_bound_names in
         let env =
-          let vid_closures = List.map bindings ~f:(fun (vid, exp) ->
+          let vid_closures = List.map bindings ~f:(fun (vid, _exp) ->
             let free_vars = Identity.Set.diff (Identity.Set.diff (Identity.Set.of_list vars_rev) (env_keys)) letrec_bound_name_set in
             let closure = (L.gen () ^ "-" ^ vid, sort_vars free_vars (List.rev vars_rev)) in
             (vid, closure)
@@ -118,11 +121,11 @@ let main (sprogram : t) : t =
         ) |> List.filter_opt in
         List.fold bindings ~init:(Mapper.apply_expr mapper exp2) ~f:(fun cont (vid, exp) -> LetExp (vid, exp, cont))
       );
-      Mapper.abs = (fun self (vids, exp) ->
+      Mapper.abs = (fun _self (vids, exp) ->
         AbsExp (vids, mapping_expr (mapper_fn env (List.rev vids @ vars_rev)) exp)
       );
-      Mapper.obj = (fun self objt ->
-        match (Objt.vid_of objt |> (fun x -> Option.bind x (Env.find env))) with
+      Mapper.obj = (fun _self objt ->
+        match (Objt.vid_of objt |> (fun x -> Option.bind x ~f:(Env.find env))) with
         | None -> ObjExp objt
         | Some (fname, []) -> ObjExp (Objt.mk_var fname)
         | Some (fname, free_vars) -> FuncCallExp (fname, List.map free_vars ~f:(fun x -> ObjExp (Objt.mk_var x)))

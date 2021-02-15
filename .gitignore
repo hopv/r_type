@@ -11,22 +11,12 @@
 .omakedb*
 *.html
 
-# ocamlbuild working directory
+# Backup files
+*~
+\#*
+
+# dune working directory
 _build/
 
-# menhir targets
-src/loader/fmlparser.ml
-src/loader/fmlparser.mli
-src/horn_solver/smtLex.ml
-src/horn_solver/smtParse.ml
-src/horn_solver/smtParse.mli
-
-# ocamlbuild targets
-src/r_type
-*.opt
-*.byte
-*.native
-
-# oasis generated files
-setup.data
-setup.log
+# build targets
+src/r_type.exe

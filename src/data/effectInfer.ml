@@ -88,13 +88,13 @@ let rec gen acc env e : t * constr list =
       tmp12, RawC(tmp2, tmp11)::acc
   | Term fml when Cond.is_var fml ->
       (List.assoc (Cond.vid_exn fml) env, Safe), acc
-  | Term fml -> (Base, Safe), acc
+  | Term _fml -> (Base, Safe), acc
   | Fail -> (Bot, MayFail), acc
 
 
 let generate env (Program.Program fs) =
-  let tmp_env = List.map (fun {Program.Func.name} -> name, raw_of_ref @@ Type.Env.find_exn env name) fs in
-  let f {Program.Func.name; args; exp} acc =
+  let tmp_env = List.map (fun {Program.Func.name;_} -> name, raw_of_ref @@ Type.Env.find_exn env name) fs in
+  let f {Program.Func.name; args; exp; _} acc =
     let raw = List.assoc name tmp_env in
     let tmp1,tmp_env' =
       let rec decomp acc tmp args =
@@ -117,7 +117,7 @@ let rec flatten constr =
   | RawC(Base, Base) -> []
   | RawC(Fun(raw1,tmp1), Fun(raw2,tmp2)) -> flatten (RawC(raw2,raw1)) @ flatten (TypeC(tmp1,tmp2))
   | RawC(Bot, _) -> []
-  | EffectC(Safe,ef2) -> []
+  | EffectC(Safe,_ef2) -> []
   | EffectC(ef1,ef2) -> [ef1,ef2]
   | _ -> assert false
 
@@ -128,7 +128,7 @@ module IntSet =
       let compare = compare
     end)
 
-let rec solve constrs =
+let solve constrs =
   let constrs' =
     let to_int ef =
       match ef with
@@ -197,7 +197,7 @@ let infer rtenv prog : env =
   env'
 
 
-let rec assumed_as_true rtenv prog =
+let assumed_as_true rtenv prog =
   let module RT = Type.RefType in
   let env = infer rtenv prog in
   let rec aux raw ty =

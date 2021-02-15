@@ -8,7 +8,7 @@ type id = Identity.t
 
 module T = struct
   type t =
-    { id: Identity.t; vars: Identity.t list; [@no_hashing] var_set: Identity.Set.t [@no_hashing] }
+    { id: Identity.t; vars: Identity.t list; [@ignore] var_set: Identity.Set.t [@ignore] }
   [@@deriving compare, sexp, hash]
 
   let equal (self : t) (another : t) : bool = Identity.equal self.id another.id
@@ -38,9 +38,7 @@ let var_set_of self = self.var_set
     Option.value (Subst.find self.var_subst v) ~default:v
     ) *)
 
-let id_of (self : t) = self.id
-
-let sort_vars = List.sort ~cmp:(Identity.compare)
+let sort_vars = List.sort ~compare:(Identity.compare)
 
 (* let get_obj_substs (self : t) =
   List.fold (List.map self.vars ~f:(fun x -> (x, x)) @ self.var_subst) ~init:ObjSubst.Map.empty ~f:(fun acc (k, v) ->

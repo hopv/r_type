@@ -18,11 +18,11 @@ module RefType = struct
   let rec subst self orig_var new_var =
     match self with
     | Int_ (v, cond) ->
-        if v = orig_var
+        if Stdlib.(v = orig_var)
         then Int_ (new_var, Cond.subst cond orig_var new_var)
         else Int_ (v, Cond.subst cond orig_var new_var)
     | Func (v, t1, t2) ->
-        if v = orig_var
+        if Stdlib.(v = orig_var)
         then Func (new_var, subst t1 orig_var new_var, subst t2 orig_var new_var)
         else Func (v, subst t1 orig_var new_var, subst t2 orig_var new_var)
     | _ -> self
@@ -69,29 +69,29 @@ module RefType = struct
 
   let uapp_of (self : t) : Cond.UnknownApp.t option =
     match self with
-    | Int_ (v, cond) -> Cond.uapp_of cond
+    | Int_ (_v, cond) -> Cond.uapp_of cond
     | _ -> None
 
   let rec uapps_of (self : t) : Cond.UnknownApp.t list =
     match self with
-    | Int_ (v, cond) -> Cond.uapps_of cond
-    | Func (v, ty1, ty2) -> uapps_of ty1 @ uapps_of ty2
+    | Int_ (_v, cond) -> Cond.uapps_of cond
+    | Func (_v, ty1, ty2) -> uapps_of ty1 @ uapps_of ty2
     | _ -> failwith "unexpected"
 
   let name_of (self : t) =
     match self with
     | Int_ (nu, _) -> nu
     | Func (nu, _, _) -> nu
-    | _ -> failwiths "unexpected" self sexp_of_t
+    | _ -> failwith "unexpected"
 
   let arg = function
-  | Func (vid, t1, t2) -> t1
+  | Func (_vid, t1, _t2) -> t1
   | _ -> failwith "unexpected"
   let rtn = function
-  | Func (vid, t1, t2) -> t2
+  | Func (_vid, _t1, t2) -> t2
   | _ -> failwith "unexpected"
   let vid = function
-  | Func (vid, t1, t2) -> vid
+  | Func (vid, _t1, _t2) -> vid
   | _ -> failwith "unexpected"
 
   let rec argument_types (self : t) =
@@ -160,7 +160,7 @@ module RefType = struct
           Cond.T.(cond1 ==> Cond.subst cond2 w v)
       | (Func (v, t1, t2), Func (w, t1', t2')) ->
           Cond.T.(denote (subst t1' w v, t1) && (D.denote v t1' ==> denote (t2, subst t2' w v)))
-      | (e1, e2) -> failwith "illigal pattern"
+      | (_e1, _e2) -> failwith "illigal pattern"
   end
 
   module FromSimpleType = struct
@@ -217,7 +217,10 @@ module Env = struct
   module T = struct
     let (@<<) (map, cs) = function
       | Element.Condition cond -> (map, cond :: cs)
-      | Element.Mapping (key, data) -> (Map.add map ~key ~data, cs)
+      | Element.Mapping (key, data) ->
+          match Map.add map ~key ~data with
+          | `Ok map -> map, cs
+          | `Duplicate -> assert false
 
     let from_condition cond = Element.Condition cond
     let from_map (k, v) = Element.Mapping (k, v)
@@ -228,7 +231,7 @@ module Env = struct
 
   let from_simple_type_env simptyenv =
     SimpleType.Env.fold simptyenv ~init:empty ~f:(fun ~key ~data tyenv ->
-      T.(tyenv @<< from_map (key, (RefType.FromSimpleType.refine ~prefix:key ~main:(key = "main") data)))
+      T.(tyenv @<< from_map (key, (RefType.FromSimpleType.refine ~prefix:key ~main:Stdlib.(key = "main") data)))
     )
 
   let to_string (mp, conds) =
@@ -260,8 +263,8 @@ module Extended = struct
   module And_Plus = struct
     let rec fold ~init ~impl t =
       let (%%) acc t' = fold t' ~init:acc ~impl in
-      let and_ v t1 t2 = init %% t1 %% t2 in
-      let impl v cond reftype = impl init cond reftype in
+      let and_ _v t1 t2 = init %% t1 %% t2 in
+      let impl _v cond reftype = impl init cond reftype in
       Variants.map t ~and_ ~impl
 
     let map_to_cond ~f t =
@@ -270,8 +273,8 @@ module Extended = struct
 
     let rec map ~f t =
       let dig t = map ~f t in
-      let and_ v t1 t2 = and_ (dig t1) (dig t2) in
-      let impl v cond reftype = f cond reftype in
+      let and_ _v t1 t2 = and_ (dig t1) (dig t2) in
+      let impl _v cond reftype = f cond reftype in
       Variants.map t ~and_ ~impl
   end
 
