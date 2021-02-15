@@ -1,0 +1,2 @@
+(ocamllex (modules fmllexer quallexer))
+(menhir (modules fmlparser qualparser))

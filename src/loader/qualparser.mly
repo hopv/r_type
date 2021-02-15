@@ -1,8 +1,7 @@
 %{
-  open Data.Objt
-  open Data.Cond
-  open Data.Type
-  open Data.Op
+  open Objt
+  open Cond
+  open Op
 %}
 
 %token IMPL
@@ -27,7 +26,7 @@
 %right NOT
 
 %start main
-%type <Data.Cond.t list> main
+%type <Cond.t list> main
 
 %%
 

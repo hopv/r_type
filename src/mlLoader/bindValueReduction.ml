@@ -1,6 +1,6 @@
 open Core
 open SugarProgram
-open Util
+open! Util
 
 module Env = struct
   module Element = struct

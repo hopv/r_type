@@ -13,10 +13,12 @@ let binop_vid vid = "$binop:" ^ string_of_int vid
 let tmp_vid vid = "$tmp:" ^ string_of_int vid
 
 let strip_wrapper vid =
-  Re2.Regex.replace (Re2.Regex.create_exn "\\$[^:]*:") ~f:(fun _ -> "") vid
+  Re2.replace
+    (Re2.create_exn "\\$[^:]*:") ~f:(fun _ -> "") vid
 
 let shorten vid =
-  Re2.Regex.replace (Re2.Regex.create_exn "\\$(.)[^:]*:") ~f:(fun t -> "$" ^ Re2.Regex.Match.get_exn t ~sub:(`Index 1)) vid
+  Re2.replace
+    (Re2.create_exn "\\$(.)[^:]*:") ~f:(fun t -> "$" ^ Re2.Match.get_exn t ~sub:(`Index 1)) vid
 
 module type Context = sig
   val label : string

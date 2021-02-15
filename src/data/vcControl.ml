@@ -26,7 +26,7 @@ module AlphaConvUnParams = struct
     let assume_eqs = ref [] in
     let new_cond = Cond.UApp_plus.map cond ~f:(fun un ->
       let uapp_conds =
-        List.fold_right (Cond.UnknownApp.substs_of un) ~init:[] ~f:(fun (kvid, vcond) uapp_conds ->
+        List.fold_right (Cond.UnknownApp.substs_of un) ~init:[] ~f:(fun (_kvid, vcond) uapp_conds ->
           let alpha_id = L.gen () in
           let () = assume_eqs := Cond.DSL.(var alpha_id == vcond) :: !assume_eqs in
           Cond.DSL.var alpha_id :: uapp_conds
@@ -96,7 +96,7 @@ module DetectNonRecursiveUnknown = struct
     let apply_to_cond ((orig_un, u_conds) : t) (cond : Cond.t) : Cond.t list =
       let orig_un_arg_vids = UnknownPredicate.var_set_of orig_un in
       match cond with
-      | Op2 (c1, Op.Impl, c2) when Option.map (uapp_of c2) ~f:(fun un -> UnknownPredicate.equal (Cond.UnknownApp.predicate_of un) orig_un ) |> Option.value ~default:false
+      | Op2 (_c1, Op.Impl, c2) when Option.map (uapp_of c2) ~f:(fun un -> UnknownPredicate.equal (Cond.UnknownApp.predicate_of un) orig_un ) |> Option.value ~default:false
         -> []
       | _ ->
         if has_specified_unknown cond orig_un then
@@ -142,14 +142,14 @@ module DetectNonRecursiveUnknown = struct
       let reports_with_count = List.map reports ~f:(fun (un, conds) ->
         (List.length conds, (un, conds))
       ) in
-      let reports_with_count = List.sort reports_with_count ~cmp:(fun a b -> Int.compare (Tuple.T2.get1 a) (Tuple.T2.get1 b)) in
+      let reports_with_count = List.sort reports_with_count ~compare:(fun a b -> Int.compare (Tuple.T2.get1 a) (Tuple.T2.get1 b)) in
       List.map reports_with_count ~f:Tuple.T2.get2
 
     let select_effective_one (reports : t list) : t option =
       let reports_with_count = List.map reports ~f:(fun (un, conds) ->
         (List.fold conds ~init:[] ~f:(fun acc x -> acc @ Cond.uapps_of x) |> List.length, (un, conds))
       ) in
-      let reports_with_count = List.sort reports_with_count ~cmp:(fun a b -> Int.compare (Tuple.T2.get1 a) (Tuple.T2.get1 b)) in
+      let reports_with_count = List.sort reports_with_count ~compare:(fun a b -> Int.compare (Tuple.T2.get1 a) (Tuple.T2.get1 b)) in
       List.hd reports_with_count |> Option.map ~f:Tuple.T2.get2
   end
 

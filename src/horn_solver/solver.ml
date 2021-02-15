@@ -70,7 +70,7 @@ let spawn () = (fun () ->
   in
   (* Close useless pipes. *)
   Unix.close solver_stdin_in ;
-  Unix.close solver_stdout_out ; 
+  Unix.close solver_stdout_out ;
   Unix.close solver_stderr_out ;
 
   (* Remember pid. *)
@@ -81,7 +81,7 @@ let spawn () = (fun () ->
   stderr := Some (
     Unix.in_channel_of_descr solver_stderr_in
   ) ;
-  let solver_stdin = 
+  let solver_stdin =
     Unix.out_channel_of_descr solver_stdin_out
     |> Format.formatter_of_out_channel
   in
@@ -148,7 +148,7 @@ let solve filename clauses =
       |> Res.map (fun () -> stdin)
     )
     |> Res.and_then (
-      fun stdin -> (
+      fun _stdin -> (
         if ! Conf.verb then Format.printf "  parsing result...@." ;
         match ! stdout with
         | Some stdout -> start_parsing stdout |> Res.and_then (
