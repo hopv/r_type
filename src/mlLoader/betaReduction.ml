@@ -11,7 +11,7 @@ module Env = struct
   let rec find (self : t) (key : Identity.t) : Identity.t option =
     match self with
     | [] -> None
-    | (k, v) :: self when Stdlib.(k = key) -> Some (Option.value (find self v) ~default:v)
+    | (k, v) :: self when Poly.(k = key) -> Some (Option.value (find self v) ~default:v)
     | _ :: self -> find self key
 end
 

@@ -170,8 +170,8 @@ type obj_and_hole = Objt.t * (Program.Exp.t -> Program.Exp.t)
 let id x = x
 let mk_var vid = vid |> Objt.mk_var |> (fun v -> ObjExp v)
 let mk_int i = i |> Objt.mk_int |> (fun v -> ObjExp v)
-let mk_true = ObjExp (Objt.mk_int 1)
-let mk_false = ObjExp (Objt.mk_int 0)
+let mk_true = ObjExp Objt.true_
+let mk_false = ObjExp Objt.false_
 
 module L = Label.Make(struct let label = "$tmp:" end)
 let gen_id = L.gen
