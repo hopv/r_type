@@ -18,7 +18,8 @@ opam install -y \
      ppx_hash.v0.14.0 \
      ppx_sexp_conv.v0.14.1 \
      ppx_variants_conv.v0.14.1 \
-     re2.v0.14.0
+     re2.v0.14.0 \
+     unionFind.20200320
 echo "done installing dependencies"
 eval $(opam env)
 

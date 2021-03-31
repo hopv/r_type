@@ -13,7 +13,7 @@ class ['a] scope =
     method add vkey vid =
       match AssignMap.add vmap ~key:vkey ~data:vid with
       | `Ok vmap' -> vmap <- vmap'
-      | `Duplicate -> assert false
+      | `Duplicate -> ()
     method mem vkey = AssignMap.mem vmap vkey
     method find vkey = AssignMap.find vmap vkey
   end

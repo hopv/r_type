@@ -1,5 +1,7 @@
 open Core
 
+let (=) = Poly.(=)
+
 let not_true t =
   match Cond.decomp_hc t with
   | _, Cond.Value (Objt.BoolObj true) -> false
@@ -19,7 +21,7 @@ end
 
 let rec remove_non_recursive ?(reports = []) (clauses : Cond.Horn.t) (reduce_multi_impl : bool) : (VcControl.DetectNonRecursiveUnknown.Report.t list * Cond.Horn.t) =
   let new_reports = VcControl.DetectNonRecursiveUnknown.run clauses reduce_multi_impl in
-  if Stdlib.(new_reports = []) then
+  if new_reports = [] then
     reports, clauses
   else
     let rec apply new_reports (reports,clauses) =

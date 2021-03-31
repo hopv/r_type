@@ -1,5 +1,7 @@
 open Core
 
+let (=) = Poly.(=)
+
 module RefType = struct
   type t =
       Func of Identity.t * t * t
@@ -18,11 +20,11 @@ module RefType = struct
   let rec subst self orig_var new_var =
     match self with
     | Int_ (v, cond) ->
-        if Stdlib.(v = orig_var)
+        if v = orig_var
         then Int_ (new_var, Cond.subst cond orig_var new_var)
         else Int_ (v, Cond.subst cond orig_var new_var)
     | Func (v, t1, t2) ->
-        if Stdlib.(v = orig_var)
+        if v = orig_var
         then Func (new_var, subst t1 orig_var new_var, subst t2 orig_var new_var)
         else Func (v, subst t1 orig_var new_var, subst t2 orig_var new_var)
     | _ -> self
@@ -231,7 +233,7 @@ module Env = struct
 
   let from_simple_type_env simptyenv =
     SimpleType.Env.fold simptyenv ~init:empty ~f:(fun ~key ~data tyenv ->
-      T.(tyenv @<< from_map (key, (RefType.FromSimpleType.refine ~prefix:key ~main:Stdlib.(key = "main") data)))
+      T.(tyenv @<< from_map (key, (RefType.FromSimpleType.refine ~prefix:key ~main:(key = "main") data)))
     )
 
   let to_string (mp, conds) =

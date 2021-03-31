@@ -1,19 +1,22 @@
 
 open Core
 
+let (=) = Poly.(=)
+let (<>) = Poly.(<>)
+
 module Subst = struct
   type t = (Identity.t * Identity.t) list
   [@@deriving eq, sexp, ord, hash]
 
   let empty = []
   let add (self:t) ((k:Identity.t), (v:Identity.t)) : t =
-    if List.Assoc.mem self ~equal:Stdlib.(=) k then self
-    else if Stdlib.(k = v) then self
+    if List.Assoc.mem self ~equal:(=) k then self
+    else if k = v then self
     else (k, v) :: self
 
   let subst self orig_id new_id : t =
-    List.map self ~f:(fun (k, v) -> (k, if Stdlib.(v = orig_id) then new_id else v)) |>
-    List.filter ~f:(fun (k, v) -> Stdlib.(k <> v))
+    List.map self ~f:(fun (k, v) -> (k, if (v = orig_id) then new_id else v)) |>
+    List.filter ~f:(fun (k, v) -> (k <> v))
 
   module T = struct
     let (@<<) mp (k, v) = (k, v) :: mp
@@ -64,9 +67,9 @@ module Operation = struct
   let false_ = Value Objt.false_
   let and_ x y = op2 x Op.And_ y
   let and_s x y =
-    if Stdlib.(x = Value Objt.true_) then
+    if x = Value Objt.true_ then
       y
-    else if Stdlib.(y = Value Objt.true_) then
+    else if y = Value Objt.true_ then
       x
     else
       and_ x y
@@ -412,7 +415,7 @@ module Simplifier = struct
       | Op2 (Value v1, Op.Eq, Value v2) when Objt.is_var v1 && Objt.is_var v2 ->
         let vid1 = Objt.vid_of_exn v1 in
         let vid2 = Objt.vid_of_exn v2 in
-        if Stdlib.(vid1 = vid2) then Value Objt.true_ else cond
+        if vid1 = vid2 then Value Objt.true_ else cond
       | Op2 (c1, op, c2) ->
         Op2 (simplify c1, op, simplify c2)
       | x -> x
@@ -774,7 +777,7 @@ include Quantifiable.Make(struct
 end)
 
 module SimpleTypeInfer = struct
-  let main self : SimpleType.Env.tt =
+  let main pred_tyenv self : SimpleType.Env.tt =
     let tyenv = List.fold (get_vids self) ~init:SimpleType.Env.empty ~f:(fun acc vid ->
       SimpleType.Env.T.(acc %<< (vid, SimpleType.gen_var ()))
     ) in
@@ -803,12 +806,85 @@ module SimpleTypeInfer = struct
           let arg_ty = if Op.is_arg_bool op then SimpleType.bool_ else SimpleType.int_ in
           let rtn_ty = if Op.is_value_bool op then SimpleType.bool_ else SimpleType.int_ in
           (SimpleType.Relation.T.(tyrel %<< (ty1 == arg_ty)), rtn_ty)
-      | UApp _ ->
+      | UApp (p, ts) ->
+          let tys = List.Assoc.find_exn ~equal:Poly.(=) pred_tyenv p.UnknownPredicate.id in
+          let tyrel =
+            match
+              List.fold2 ts tys ~init:tyrel ~f:(fun tyrel t ty ->
+                let (tyrel, ty') = infer tyrel t in
+                SimpleType.Relation.T.(tyrel %<< (ty == ty')))
+            with Ok tyrel -> tyrel | Unequal_lengths -> assert false
+          in
           (tyrel, SimpleType.bool_)
     in
     let (tyrel, ty) = infer SimpleType.Relation.empty self in
     let tyrel = SimpleType.Relation.T.(tyrel %<< (ty == SimpleType.bool_)) in
     SimpleType.Relation.unify tyenv tyrel
+
+  let infer_clauses clauses =
+    let module UF = UnionFind in
+    let gen_tyvar = UF.make in
+    let ty_bool = gen_tyvar() in
+    let ty_int = gen_tyvar() in
+    let assoc_or_gen_var env vid =
+      match List.Assoc.find ~equal:Poly.(=) env vid with
+      | Some ty -> env, ty
+      | None ->
+          let ty = gen_tyvar() in
+          (vid, ty)::env, ty
+    in
+    let assoc_or_gen_pred env p =
+      match List.Assoc.find ~equal:Poly.(=) env p.UnknownPredicate.id with
+      | Some tys -> env, tys
+      | None ->
+          let tys = List.map p.UnknownPredicate.vars ~f:(fun _ -> gen_tyvar()) in
+          (p.UnknownPredicate.id, tys)::env, tys
+    in
+    let rec gen_constr (var_tyenv,pred_tyenv,constr) t ty =
+      match t with
+      | Value _v when is_var t ->
+          let vid = vid_exn t in
+          let var_tyenv,ty' = assoc_or_gen_var var_tyenv vid in
+          var_tyenv, pred_tyenv, (ty,ty')::constr
+      | Value v ->
+          let ty' = if Objt.is_int v then ty_int else ty_bool in
+          var_tyenv, pred_tyenv, (ty,ty')::constr
+      | Op2 (t1, op, t2) ->
+          let arg_ty =
+            if Op.is_arg_polymorphic op then gen_tyvar()
+            else if Op.is_arg_bool op then ty_bool
+            else ty_int
+          in
+          let var_tyenv,pred_tyenv,constr = gen_constr (var_tyenv,pred_tyenv,constr) t1 arg_ty in
+          let var_tyenv,pred_tyenv,constr = gen_constr (var_tyenv,pred_tyenv,constr) t2 arg_ty in
+          let ty' = if Op.is_value_bool op then ty_bool else ty_int in
+          var_tyenv, pred_tyenv, (ty,ty')::constr
+      | Op1 (op, t1) ->
+          let arg_ty = if Op.is_arg_bool op then ty_bool else ty_int in
+          let ty' = if Op.is_value_bool op then ty_bool else ty_int in
+          let var_tyenv,pred_tyenv,constr = gen_constr (var_tyenv,pred_tyenv,constr) t1 arg_ty in
+          var_tyenv, pred_tyenv, (ty,ty')::constr
+      | UApp(p,ts) ->
+          let pred_tyenv,tys = assoc_or_gen_pred pred_tyenv p in
+          match List.fold2 ts tys ~init:(var_tyenv,pred_tyenv,constr) ~f:gen_constr with
+          | Ok r -> r
+          | _ -> assert false
+    in
+    let solve pred_tyenv constr =
+      List.iter constr ~f:(fun (ty,ty') -> ignore (UF.union ty ty'));
+      List.map pred_tyenv ~f:(fun (p,tyvars) ->
+        let tys =
+          List.fold_right tyvars ~init:[] ~f:(fun tyvar acc ->
+            let ty = if UF.eq tyvar ty_bool then SimpleType.Bool_ else SimpleType.Int_ in
+            ty::acc)
+        in
+        p, tys)
+    in
+    let pred_tyenv,constr = List.fold_left clauses ~init:([],[]) ~f:(
+                              fun (pred_tyenv,constr) t ->
+                              let _,pred_tyenv,constr = gen_constr ([],pred_tyenv,constr) t ty_bool in
+                              pred_tyenv,constr) in
+    solve pred_tyenv constr
 
   let get_type self tyenv : SimpleType.t =
     match self with
@@ -1083,7 +1159,7 @@ let alpha_rename (t : t) =
       let ts2',map =
         let aux t =
           match t with
-          | Value (Objt.VarObj x) when 1 = List.length (List.filter ~f:(Stdlib.(=) x) fv) ->
+          | Value (Objt.VarObj x) when 1 = List.length (List.filter ~f:((=) x) fv) ->
               t, None
           | t ->
               let y = AlphaConv.L.gen() in
@@ -1171,9 +1247,9 @@ module ToSmt2 = struct
   | _, Unk -> t1
   | Int, Bool | Bool, Int ->
     (* failwith "can't merge int and bool types" *)
-    Int
+    Bool
   | _ -> (
-    assert Stdlib.(t1 = t2) ;
+    assert (t1 = t2) ;
     t1
   )
 
@@ -1208,8 +1284,8 @@ module ToSmt2 = struct
 
   let typ_of_term (vars: (Objt.id * typ) list) term = match term with
   | Value (Objt.VarObj vid) -> (
-    match List.find vars ~f:(fun (v, _t) -> Stdlib.(v = vid)) with
-    | Some (_, t) -> t
+    match List.Assoc.find ~equal:Poly.(=) vars vid with
+    | Some t -> t
     | None -> Unk
   )
   | Value (Objt.SpecialVar _vid) -> failwith "special var are not supported"
@@ -1235,7 +1311,7 @@ module ToSmt2 = struct
     (* Format.printf "var %s@." vid ; *)
     let (vars, added) = List.fold_left vars ~init:([], false) ~f:(
       fun (vars, added) (var, typ') ->
-        if not added && Stdlib.(var = vid) then
+        if not added && (var = vid) then
           (var, merge_types typ typ') :: vars, true
         else (var, typ') :: vars, added
     ) in
@@ -1245,7 +1321,7 @@ module ToSmt2 = struct
   | Value (Objt.Array _) -> failwith "arrays are not supported..."
   | UApp (un, terms) -> (
     let preds = if List.mem ~equal:(
-      fun p p' -> Stdlib.(p.UnknownPredicate.id = p'.UnknownPredicate.id)
+      fun p p' -> p.UnknownPredicate.id = p'.UnknownPredicate.id
     ) preds un then preds else un :: preds in
     List.fold_left terms ~init:(vars, preds) ~f:(
       fun (vars, preds) (term: t) ->
@@ -1253,7 +1329,7 @@ module ToSmt2 = struct
     )
   )
   | Op1 (op, term) -> (
-    assert Stdlib.(typ = typ_of_op op) ;
+    assert (typ = typ_of_op op) ;
     collect ~debug:debug ~typ:(typ_of_op_args op) vars preds term
   )
   | Op2 (lft, op, rgt) -> (
@@ -1296,7 +1372,7 @@ module ToSmt2 = struct
 
     (* Format.fprintf fmt "collecting predicates...@." ; *)
 
-    let clauses = List.map clauses ~f:Boolnize.main in
+    let pred_tyenv = SimpleTypeInfer.infer_clauses clauses in
 
     let _, preds = List.fold_left clauses ~init:([],[]) ~f:(
       fun (_, preds) clause ->
@@ -1305,11 +1381,13 @@ module ToSmt2 = struct
 
     List.iter preds ~f:(
       fun pred ->
+        let tys = List.Assoc.find_exn ~equal:Poly.(=) pred_tyenv pred.UnknownPredicate.id in
         Format.fprintf fmt "(declare-fun |%s|@.  ("
           (Identity.Short.show pred.UnknownPredicate.id) ;
-        List.iter pred.UnknownPredicate.vars ~f:(
-          fun _ -> Format.fprintf fmt " Int"
-        ) ;
+        (match
+          List.iter2 pred.UnknownPredicate.vars tys ~f:(fun _ ty ->
+            Format.fprintf fmt " %s" (str_of_typ @@ typ_of_simpleType ty))
+        with Ok () -> () | Unequal_lengths -> assert false) ;
         Format.fprintf fmt " ) Bool@.)@.@."
     ) ;
 
@@ -1317,7 +1395,7 @@ module ToSmt2 = struct
 
     List.iter clauses ~f:(
       fun clause ->
-        let vars = SimpleType.Env.to_alist @@ SimpleTypeInfer.main clause in
+        let vars = SimpleType.Env.to_alist @@ SimpleTypeInfer.main pred_tyenv clause in
         let lhs, rhs = split_clause clause in
         let rec loop (
           res: ((t list) * (t option list)) list
@@ -1345,7 +1423,7 @@ module ToSmt2 = struct
         List.iter split ~f:(fun (lhs, rhs) ->
           List.iter rhs ~f:(
             fun rhs ->
-              let positive = Stdlib.(rhs <> None) in
+              let positive = rhs <> None in
               Format.fprintf fmt "(assert@.  (" ;
               ( if positive then
                   Format.fprintf fmt "forall ("
@@ -1369,7 +1447,7 @@ module ToSmt2 = struct
               ( if positive then
                   Format.fprintf fmt "(=>@.      "
               ) ;
-              ( if Stdlib.(lhs = []) then (
+              ( if lhs = [] then (
                   Format.fprintf fmt "true@."
                 ) else (
                   Format.fprintf fmt "( and" ;

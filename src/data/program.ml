@@ -2,6 +2,8 @@ open Core
 open Sexplib.Std
 module I = Formatable
 
+let (=) = Poly.(=)
+
 module Exp = struct
   type t =
     Let_ of Identity.t * t * t
@@ -91,7 +93,7 @@ module Func = struct
   and args = Identity.t list
   [@@deriving sexp, eq, ord, hash]
 
-  let is_main (self : t) = Stdlib.(self.name = "main")
+  let is_main (self : t) = self.name = "main"
 
   let make ?annotation ~name ~args ~exp : t =
     let annotation = Option.value ~default:(Annotation.make ()) annotation in
@@ -218,7 +220,7 @@ module SimpleTypeInfer = struct
     let (tyenv, tyrel) = List.fold fs ~f:infer_each_func ~init:(init_tyenv, Relation.empty) in
     let tyenv = Relation.unify (tyenv (* |> Env.inspect *) ) (tyrel (* |> Relation.inspect *) ) in
     let fids = List.map fs ~f:(fun ({ Func.name ; _ } : Func.t) -> name) in
-    Env.filteri tyenv ~f:(fun ~key ~data:_ -> List.mem fids key ~equal:Stdlib.(=))
+    Env.filteri tyenv ~f:(fun ~key ~data:_ -> List.mem fids key ~equal:(=))
 end
 
 let use_refinement_annotation = ref true
